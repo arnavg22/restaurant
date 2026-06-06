@@ -1,0 +1,276 @@
+// ============================================================
+// CAFETERIA GREEN — PRISMA SCHEMA
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+enum Role {
+  customer
+  admin
+  delivery
+  developer
+}
+
+model User {
+  id            String    @id @default(uuid()) 
+  name          String    
+  email         String    @unique 
+  phone         String    
+  passwordHash  String    @map("password_hash") 
+  role          Role      @default(customer)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") 
+  updatedAt     DateTime  @updatedAt @map("updated_at") 
+
+  orders        Order[]           @relation("CustomerOrders")
+  cancelledOrders Order[]         @relation("CancelledByUser")
+  sessions      Session[]
+  dealUsages    DealUsage[]
+  dealsCreated  Deal[]            @relation("DealCreator")
+  logsChanged   OrderLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// MENU ITEMS
+// ─────────────────────────────────────────────
+model MenuItem {
+  id           String    @id @default(uuid()) 
+  name         String    
+  description  String?
+  price        Decimal   
+  category     String    
+  imageUrl     String?   @map("image_url") 
+  isAvailable  Boolean   @default(true) @map("is_available")
+  sortOrder    Int       @default(0) @map("sort_order")
+  createdAt    DateTime  @default(now()) @map("created_at") 
+  updatedAt    DateTime  @updatedAt @map("updated_at") 
+
+  orderItems   OrderItem[]
+  applicableDeals Deal[]  @relation("ApplicableItem")
+
+  @@map("menu_items")
+}
+
+// ─────────────────────────────────────────────
+// DEALS / DISCOUNTS (Only developer can create)
+// ─────────────────────────────────────────────
+enum DiscountType {
+  flat
+  percent
+}
+
+model Deal {
+  id                  String        @id @default(uuid()) 
+  title               String        
+  description         String?
+  discountType        DiscountType  @map("discount_type")
+  discountValue       Decimal       @map("discount_value") 
+  maxDiscountAmount   Decimal?      @map("max_discount_amount") 
+  minOrderAmount      Decimal       @default(0) @map("min_order_amount") 
+  applicableItemId    String?       @map("applicable_item_id") 
+  startsAt            DateTime      @default(now()) @map("starts_at") 
+  expiresAt           DateTime      @map("expires_at") 
+  maxTotalUses        Int?          @map("max_total_uses")
+  currentUses         Int           @default(0) @map("current_uses")
+  maxUsesPerUser      Int           @default(1) @map("max_uses_per_user")
+  isActive            Boolean       @default(true) @map("is_active")
+  createdBy           String        @map("created_by") 
+  createdAt           DateTime      @default(now()) @map("created_at") 
+  updatedAt           DateTime      @updatedAt @map("updated_at") 
+
+  creator             User          @relation("DealCreator", fields: [createdBy], references: [id])
+  applicableItem      MenuItem?     @relation("ApplicableItem", fields: [applicableItemId], references: [id])
+  usages              DealUsage[]
+  appliedOrders       Order[]
+
+  @@map("deals")
+}
+
+model DealUsage {
+  id        String   @id @default(uuid()) 
+  dealId    String   @map("deal_id") 
+  userId    String   @map("user_id") 
+  orderId   String   @map("order_id") 
+  usedAt    DateTime @default(now()) @map("used_at") 
+
+  deal      Deal     @relation(fields: [dealId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@unique([dealId, orderId])
+  @@map("deal_usage")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS
+// ─────────────────────────────────────────────
+enum OrderStatus {
+  payment_verification_pending
+  placed
+  accepted
+  preparing
+  ready
+  out_for_delivery
+  delivered
+  cancelled
+  payment_expired
+}
+
+model Order {
+  id                      String      @id @default(uuid()) 
+  orderNumber             String      @unique @map("order_number") 
+  userId                  String      @map("user_id") 
+  transactionId           String?     @unique @map("transaction_id") 
+
+  // Delivery info — MANDATORY, enforced at DB + API + frontend levels
+  deliveryName            String      @map("delivery_name") 
+  deliveryPhone           String      @map("delivery_phone") 
+  buildingName            String      @map("building_name") 
+  floorSeat               String      @map("floor_seat") 
+  deliveryNotes           String?     @map("delivery_notes")
+
+  // Financials
+  subtotal                Decimal     
+  discountAmount          Decimal     @default(0) @map("discount_amount") 
+  customerPays            Decimal     @map("customer_pays") 
+  platformFee             Decimal     @map("platform_fee") 
+  discountFromPlatform    Decimal     @default(0) @map("discount_from_platform") 
+  platformEarnings        Decimal     @map("platform_earnings") 
+  restaurantShare         Decimal     @map("restaurant_share") 
+
+  // Deal
+  appliedDealId           String?     @map("applied_deal_id") 
+
+  // Razorpay payment
+  paidAt                  DateTime?   @map("paid_at") 
+
+  // Status
+  status                  OrderStatus @default(payment_verification_pending)
+
+  // Cancellation
+  cancelledBy             String?     @map("cancelled_by") 
+  cancelReason            String?     @map("cancel_reason")
+
+  // Settlement
+  isSettled               Boolean     @default(false) @map("is_settled")
+  settledAt               DateTime?   @map("settled_at") 
+
+  // Timestamps
+  createdAt               DateTime    @default(now()) @map("created_at") 
+  updatedAt               DateTime    @updatedAt @map("updated_at") 
+  deliveredAt             DateTime?   @map("delivered_at") 
+
+  // Relations
+  user                    User        @relation("CustomerOrders", fields: [userId], references: [id])
+  cancelledByUser         User?       @relation("CancelledByUser", fields: [cancelledBy], references: [id])
+  appliedDeal             Deal?       @relation(fields: [appliedDealId], references: [id])
+  items                   OrderItem[]
+  logs                    OrderLog[]
+  dealUsages              DealUsage[]
+
+  @@map("orders")
+}
+
+// ─────────────────────────────────────────────
+// ORDER ITEMS
+// ─────────────────────────────────────────────
+model OrderItem {
+  id           String    @id @default(uuid()) 
+  orderId      String    @map("order_id") 
+  menuItemId   String    @map("menu_item_id") 
+  itemName     String    @map("item_name") 
+  quantity     Int
+  unitPrice    Decimal   @map("unit_price") 
+  itemTotal    Decimal   @map("item_total") 
+  createdAt    DateTime  @default(now()) @map("created_at") 
+
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────
+// ORDER LOGS (immutable audit trail)
+// ─────────────────────────────────────────────
+model OrderLog {
+  id              String    @id @default(uuid()) 
+  orderId         String    @map("order_id") 
+  fromStatus      String?   @map("from_status") 
+  toStatus        String    @map("to_status") 
+  changedBy       String?   @map("changed_by") 
+  changedByRole   String?   @map("changed_by_role") 
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime  @default(now()) @map("created_at") 
+
+  order           Order     @relation(fields: [orderId], references: [id])
+  changedByUser   User?     @relation(fields: [changedBy], references: [id])
+
+  @@map("order_logs")
+}
+
+// ─────────────────────────────────────────────
+// SETTLEMENTS
+// ─────────────────────────────────────────────
+enum SettlementStatus {
+  pending
+  processing
+  completed
+}
+
+model Settlement {
+  id                String           @id @default(uuid()) 
+  periodStart       DateTime         @map("period_start") 
+  periodEnd         DateTime         @map("period_end") 
+  totalOrders       Int              @map("total_orders")
+  grossRevenue      Decimal          @map("gross_revenue") 
+  totalDiscounts    Decimal          @map("total_discounts") 
+  customerRevenue   Decimal          @map("customer_revenue") 
+  platformFeeTotal  Decimal          @map("platform_fee_total") 
+  platformEarnings  Decimal          @map("platform_earnings") 
+  restaurantPayout  Decimal          @map("restaurant_payout") 
+  status            SettlementStatus @default(pending)
+  settledAt         DateTime?        @map("settled_at") 
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at") 
+
+  @@map("settlements")
+}
+
+// ─────────────────────────────────────────────
+// SESSIONS (auth)
+// ─────────────────────────────────────────────
+model Session {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  refreshToken  String    @map("refresh_token")
+  expiresAt     DateTime  @map("expires_at")
+  deviceInfo    String?   @map("device_info")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+
+  @@map("password_resets")
+}
