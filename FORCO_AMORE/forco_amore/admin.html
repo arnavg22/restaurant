@@ -171,6 +171,18 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
         <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="commPayLog"></table></div>
       </div>
       <div class="view" id="view-dash"><div class="dash-grid" id="dashKpis"></div><div class="card" id="dashOutstanding"></div></div>
+      <div class="view" id="view-settings">
+        <div class="card" style="max-width:640px">
+          <h3 style="margin-bottom:10px">Payment Settings</h3>
+          <div class="muted" style="font-size:13px;margin-bottom:16px">Set the UPI ID where customers pay. The QR code on the customer checkout screen uses this ID with the exact order amount prefilled.</div>
+          <div class="field">
+            <label>Restaurant UPI ID for accepting payments</label>
+            <input id="upiId" placeholder="e.g. restaurant@oksbi">
+          </div>
+          <button class="btn" onclick="saveUpiSettings()">Save UPI ID</button>
+          <div id="upiStatus" style="margin-top:12px"></div>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -252,7 +264,7 @@ $('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(
   if(currentView==='staff') loadStaff();
   if(currentView==='share') loadShare();
   if(currentView==='dash') loadDash();
-  if(currentView==='settings') CG.loadSettings();
+  if(currentView==='settings') loadUpiSettings();
 });
 
 async function loadDeliveryPersons(){ try{ DELIVERY_PERSONS = await api.get('/admin/delivery-persons'); }catch{ DELIVERY_PERSONS=[]; } }
@@ -649,6 +661,26 @@ async function submitCommissionPayment(){
     closePayModal(); $('#payAmount').value=''; loadCommission();
   }catch(e){ toast(e.message); }
   finally{ btn.disabled=false; }
+}
+
+/* ---------- SETTINGS (UPI) ---------- */
+async function loadUpiSettings(){
+  try{
+    const settings = await api.get('/admin/settings');
+    $('#upiId').value = settings.upi_id || '';
+    $('#upiStatus').innerHTML = settings.upi_id
+      ? `<div style="color:var(--leaf-deep);font-size:13px">✓ Current UPI: <b>${settings.upi_id}</b> — customer QR codes will use this ID.</div>`
+      : `<div style="color:var(--hot);font-size:13px">⚠ No UPI ID set. Customers cannot generate payment QR codes until you set one.</div>`;
+  }catch(e){ toast(e.message); }
+}
+async function saveUpiSettings(){
+  const upiId = $('#upiId').value.trim();
+  if(!upiId){ toast('Enter a valid UPI ID'); return; }
+  try{
+    await api.put('/admin/settings', { upi_id: upiId });
+    toast('UPI ID saved — customer QR codes will now use ' + upiId);
+    loadUpiSettings();
+  }catch(e){ toast(e.message); }
 }
 
 /* ---------- DASHBOARD ---------- */
