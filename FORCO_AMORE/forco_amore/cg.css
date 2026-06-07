@@ -1,0 +1,88 @@
+/* FORCO AMORE — shared theme + common components */
+:root{
+  --bg: #1F1A17; --panel: #2a2522; --panel-2: #3a3431;
+  --ink: #F5EFE1; --ink-soft: #d8cfbf; --ink-faint: #a39e93;
+  --line: #4a4441; --line-soft: #5a5451;
+  --primary: #D4AF37; --primary-deep: #b8860b; --primary-bg: #3b321a;
+  --secondary: #8B0000; --secondary-soft: #b03a3a;
+  --leaf: var(--primary); --leaf-deep: var(--primary-deep); --leaf-bg: var(--primary-bg);
+  --amber: #D4AF37; --bean: #8B4513; --hot: #8B0000;
+  --slate:#1a1a1a; --slate-2:#2c2c2c;
+  --blue: #4682B4;
+  --purple: #800080;
+  --green: #008000;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Hanken Grotesk',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.display{font-family:'Bricolage Grotesque',sans-serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit}
+.leaf-svg{width:24px;height:24px}
+
+/* buttons */
+.btn{height:46px;padding:0 20px;border-radius:12px;background:var(--leaf);color:var(--bg);font-weight:700;font-size:14.5px;transition:all .18s ease;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border:1.5px solid var(--leaf);color:var(--leaf-deep)}
+.btn.soft{background:var(--leaf-bg);color:var(--leaf-deep)}
+.btn.amber{background:var(--amber);color:oklch(0.30 0.05 70)}
+.btn.danger{background:oklch(0.95 0.04 25);color:var(--hot)}
+.btn.dark{background:var(--slate);color:#fff}
+.btn.sm{height:38px;padding:0 14px;font-size:13px;border-radius:10px}
+
+/* status badge */
+.sbadge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:capitalize;white-space:nowrap;display:inline-block}
+.s-payment_verification_pending{background:oklch(0.93 0.07 75);color:var(--bean)}
+.s-accepted{background:var(--leaf-bg);color:var(--leaf-deep)}
+.s-preparing{background:oklch(0.92 0.07 150);color:var(--leaf-deep)}
+.s-ready{background:oklch(0.92 0.06 250);color:var(--blue)}
+.s-out_for_delivery{background:oklch(0.92 0.07 230);color:oklch(0.42 0.13 230)}
+.s-delivered{background:var(--panel-2);color:var(--ink-faint)}
+.s-cancelled,.s-payment_expired{background:oklch(0.94 0.04 25);color:var(--hot)}
+
+/* login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(165deg,var(--leaf) 0%,var(--leaf-deep) 100%)}
+.login-card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px 30px;width:380px;max-width:100%;box-shadow:0 30px 80px rgba(0,0,0,.28)}
+.login-card .lm{width:54px;height:54px;border-radius:16px;background:var(--leaf);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.login-card .lm svg{width:30px;height:30px}
+.login-card h1{font-size:24px;letter-spacing:-.02em}
+.login-card .role-tag{font-size:12.5px;color:var(--ink-faint);margin-top:2px;margin-bottom:22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+input:not([type=checkbox]):not([type=radio]), select, textarea {
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 0 14px;
+    height: 46px;
+    font-size: 14px;
+    transition: border .15s;
+    width: 100%;
+}
+
+.field textarea{height:auto;padding:12px 14px;resize:vertical;min-height:70px}
+input:not([type=checkbox]):not([type=radio]):focus, select:focus, textarea:focus{outline:none;border-color:var(--leaf)}
+.login-err{background:oklch(0.95 0.04 25);color:var(--hot);font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:14px;display:none}
+.login-err.show{display:block}
+.login-alt{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:16px}
+.login-alt a{color:var(--leaf-deep);font-weight:600;cursor:pointer}
+.login-hint{margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--ink-faint);line-height:1.6}
+
+/* generic card */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.muted{color:var(--ink-faint)}
+.empty{text-align:center;padding:60px 20px;color:var(--ink-faint)}
+
+/* powered-by tag */
+.powered{text-align:center;font-size:12px;color:var(--ink-faint);padding:16px 0 4px;letter-spacing:.01em}
+.powered b{color:var(--leaf-deep);font-weight:700}
+
+/* spinner */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.fade{animation:fadeSlideUp .3s ease}
+.hidden{display:none!important}

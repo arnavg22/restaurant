@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>FORCO AMORE — Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+.app{max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.06);position:relative;display:flex;flex-direction:column;overflow:hidden}
+.screen{display:none;flex-direction:column;flex:1;min-height:0}
+.screen.active{display:flex}
+.topbar{background:var(--leaf);color:var(--bg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.topbar .brand{display:flex;align-items:center;gap:10px}
+.topbar .brand b{font-family:'Bricolage Grotesque';font-size:17px}
+.topbar .brand small{display:block;font-size:11px;opacity:.85}
+.iconbtn{width:42px;height:42px;border-radius:12px;background:rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;position:relative;color:var(--bg)}
+.iconbtn svg{width:22px;height:22px}
+.badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--amber);color:var(--ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--leaf)}
+.back-btn{display:flex;align-items:center;gap:8px;color:var(--bg);font-weight:600;font-size:15px}
+.back-btn svg{width:20px;height:20px}
+.logout{font-size:12px;color:var(--bg);cursor:pointer}
+.body{flex:1;min-height:0;padding:14px 16px 24px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.menuhead{flex:0 0 auto;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--line-soft)}
+.menuhead input{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);padding:0 16px;font-size:14px;background:var(--panel)}
+.seg{display:flex;gap:6px;background:var(--panel-2);padding:5px;border-radius:13px;margin-bottom:10px}
+.seg button{flex:1;height:40px;border-radius:10px;font-weight:700;font-size:14px;color:var(--ink-soft);transition:all .15s}
+.seg button.sel{background:var(--leaf);color:#fff}
+.add-from{font-size:11px;color:var(--ink-faint);font-weight:500;margin-top:2px}
+/* variant modal */
+.modal-bg{position:absolute;inset:0;background:rgba(15,23,20,.55);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.modal-bg.show{display:flex}
+.vmodal{background:var(--panel);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 18px 24px;animation:fadeSlideUp .25s ease}
+.vmodal h3{font-size:18px}
+.vmodal .sub{font-size:13px;color:var(--ink-faint);margin-bottom:14px}
+.vopt{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.vopt:active{transform:scale(.99)}
+.vopt:hover{border-color:var(--leaf)}
+.vopt b{font-size:15px}
+.vopt .vp{font-weight:700;color:var(--leaf-deep)}
+.vmodal .cancel{width:100%;text-align:center;padding:12px;color:var(--ink-faint);font-weight:600;margin-top:4px}
+.cat-head{padding:16px 0 6px;border-left:3px solid var(--leaf);padding-left:12px;margin-top:8px}
+.cat-head h3{font-size:17px}
+.item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+.item-main{flex:1;min-width:0}
+.item-name{font-weight:600;font-size:15px}
+.item-desc{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
+.item-price{font-weight:700;font-size:14px;margin-top:6px}
+.add-btn{width:40px;height:40px;border-radius:12px;background:var(--leaf-bg);color:var(--leaf-deep);font-size:22px;font-weight:700;border:1px solid oklch(0.88 0.05 150)}
+.stepper{display:flex;align-items:center;background:var(--leaf);border-radius:12px;height:40px;overflow:hidden}
+.stepper button{width:34px;height:40px;color:#fff;font-size:19px;font-weight:700}
+.stepper span{min-width:24px;text-align:center;color:#fff;font-weight:700}
+/* bottom nav */
+.botnav{flex:0 0 58px;width:100%;background:var(--panel);border-top:1px solid var(--line);display:none;z-index:40}
+.botnav.show{display:flex}
+.botnav button{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-faint);font-size:11px;font-weight:600}
+.botnav button svg{width:23px;height:23px}
+.botnav button.sel{color:var(--leaf-deep)}
+.botnav .nbadge{position:absolute;top:8px;margin-left:18px;min-width:16px;height:16px;border-radius:8px;background:var(--hot);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.cartbar{position:absolute;left:16px;right:16px;bottom:74px;transform:translateY(260%);background:var(--leaf-deep);color:#fff;border-radius:16px;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 12px 30px rgba(0,0,0,.22);z-index:45;transition:transform .35s cubic-bezier(.2,.8,.2,1);cursor:pointer}
+.cartbar.show{transform:translateY(0)}
+.cart-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:center}
+.bill{background:var(--panel-2);border-radius:16px;padding:18px;margin-top:16px}
+.bill-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--ink-soft)}
+.bill-row.total{border-top:1px dashed var(--line);margin-top:6px;padding-top:12px;font-size:18px;font-weight:700;color:var(--ink)}
+.section-title{font-size:15px;font-weight:700;margin:20px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.section-title a{font-size:12.5px;color:var(--leaf-deep);font-weight:600;cursor:pointer}
+.deal-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.deal-chip{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;cursor:pointer;flex:1;min-width:150px;display:flex;flex-direction:column;gap:2px}
+.deal-chip.sel{border-color:var(--leaf);background:var(--leaf-bg)}
+.deal-chip b{font-size:13px}
+.deal-chip span{display:block}
+/* address cards */
+.addr-card{border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:border .15s}
+.addr-card.sel{border-color:var(--leaf);background:var(--leaf-bg)}
+.addr-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.addr-card.sel .addr-radio{border-color:var(--leaf)}
+.addr-card.sel .addr-radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--leaf)}
+.addr-main{flex:1;min-width:0}
+.addr-label{font-weight:700;font-size:14px;display:flex;align-items:center;gap:7px}
+.addr-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--leaf-bg);color:var(--leaf-deep);padding:1px 7px;border-radius:10px}
+.addr-line{font-size:13px;color:var(--ink-soft);margin-top:3px}
+.addr-del{color:var(--ink-faint);font-size:18px;padding:2px 6px;flex:0 0 auto}
+.addr-add{border:1.5px dashed var(--line);border-radius:14px;padding:13px;text-align:center;color:var(--leaf-deep);font-weight:600;font-size:13.5px;cursor:pointer;margin-bottom:10px}
+.addr-form{border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;display:none}
+.addr-form.show{display:block}
+.qr-box{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;text-align:center;margin-bottom:16px}
+.qr-box img{width:240px;height:240px;max-width:100%}
+.qr-amt{font-family:'Bricolage Grotesque';font-size:30px;font-weight:800;color:var(--leaf-deep)}
+.qr-vpa{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.upi-link{display:inline-flex;margin-top:12px}
+.pay-steps{font-size:13px;color:var(--ink-soft);line-height:1.7;background:var(--panel-2);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.pay-steps b{color:var(--ink)}
+/* orders tab */
+.ord-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
+.ord-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ord-id{font-family:'Bricolage Grotesque';font-weight:700;font-size:15px}
+.ord-date{font-size:12px;color:var(--ink-faint)}
+.ord-items{font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:10px}
+.ministeps{display:flex;gap:4px;margin-bottom:12px}
+.ministeps .ms{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.ministeps .ms.on{background:var(--leaf)}
+.ministeps .ms.cancel{background:var(--hot)}
+.ord-actions{display:flex;gap:8px}
+.ord-actions .btn{flex:1}
+.order-id{font-family:'Bricolage Grotesque';font-size:34px;font-weight:800;color:var(--leaf-deep);text-align:center}
+.order-sub{text-align:center;color:var(--ink-faint);font-size:13px;margin-top:2px;margin-bottom:8px}
+.progress{margin:22px 0}
+.pstep{display:flex;gap:14px}
+.pstep .dotcol{display:flex;flex-direction:column;align-items:center}
+.pdot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--ink-faint);z-index:2;transition:all .3s}
+.pline{width:2px;flex:1;background:var(--line);min-height:24px}
+.pstep:last-child .pline{display:none}
+.pstep.done .pdot{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.pstep.done .pline{background:var(--leaf)}
+.pstep.cur .pdot{background:var(--leaf);border-color:var(--leaf);color:#fff;box-shadow:0 0 0 5px var(--leaf-bg)}
+.pstep .ptxt{padding-bottom:18px}
+.pstep .ptxt b{font-size:15px}
+.pstep.pending .ptxt b{color:var(--ink-faint);font-weight:500}
+.pstep .ptxt small{display:block;color:var(--ink-faint);font-size:12.5px}
+.celebrate{background:var(--leaf);color:#fff;border-radius:16px;padding:18px;text-align:center;margin:16px 0;display:none}
+.celebrate.show{display:block;animation:fadeSlideUp .4s ease}
+.cancel-banner{background:oklch(0.95 0.04 25);color:var(--hot);border-radius:14px;padding:16px;text-align:center;margin:16px 0;font-weight:600;display:none}
+.cancel-banner.show{display:block}
+.spec-box{background:oklch(0.96 0.05 75);color:var(--bean);border-radius:12px;padding:12px;font-size:13px;margin-bottom:12px}
+.agent-box{display:flex;align-items:center;gap:12px;background:var(--leaf-bg);border-radius:14px;padding:13px 14px;margin-bottom:12px}
+.agent-box .agent-ic{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
+.agent-box a{flex:0 0 auto;text-decoration:none}
+.powered{text-align:center;font-size:12px;color:var(--ink-faint);padding:18px 0 6px;letter-spacing:.01em}
+.powered b{color:var(--leaf-deep);font-weight:700}
+.powered.on-leaf{color:rgba(255,255,255,.85)}
+.powered.on-leaf b{color:#fff}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- LOGIN / REGISTER -->
+  <div class="login-wrap screen active" id="screen-auth">
+    <div class="login-card">
+      <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="var(--bg)"/></svg></div>
+      <h1 id="authTitle">Welcome back</h1>
+      <div class="role-tag">FORCO AMORE · Order food to your desk</div>
+      <div class="login-err" id="authErr"></div>
+      <div id="loginForm">
+        <div class="field"><label>Email</label><input id="liEmail" type="email" placeholder="you@office.com"></div>
+        <div class="field"><label>Password</label><input id="liPass" type="password" placeholder="••••••••"></div>
+        <button class="btn block" id="loginBtn" onclick="doLogin()">Log in</button>
+        <div class="login-alt">New here? <a onclick="showRegister()">Create an account</a></div>
+      </div>
+      <div id="registerForm" class="hidden">
+        <div class="field"><label>Full name</label><input id="rgName" placeholder="Your name"></div>
+        <div class="field"><label>Email</label><input id="rgEmail" type="email" placeholder="you@office.com"></div>
+        <div class="field"><label>Phone</label><input id="rgPhone" inputmode="tel" placeholder="10-digit mobile"></div>
+        <div class="field"><label>Password</label><input id="rgPass" type="password" placeholder="min 6 characters"></div>
+        <button class="btn block" id="regBtn" onclick="doRegister()">Create account &amp; start</button>
+        <div class="login-alt">Already have an account? <a onclick="showLogin()">Log in</a></div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="screen" id="screen-menu">
+    <div class="topbar">
+      <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="leaf-svg"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg>
+        <div><b>FORCO AMORE</b><small id="menuHello">Delivery</small></div></div>
+      <button class="iconbtn" onclick="go('cart')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="var(--bg)"/><circle cx="18" cy="20" r="1.4" fill="var(--bg)"/></svg>
+        <span class="badge" id="cartBadge" style="display:none">0</span>
+      </button>
+    </div>
+    <div class="menuhead">
+      <div class="seg" id="sectionTabs"><button data-sec="Food" class="sel" onclick="setSection('Food')">🍽 Food</button><button data-sec="Bar" onclick="setSection('Bar')">🍺 Bar</button></div>
+      <input id="search" placeholder="Search dishes…" oninput="renderMenu()">
+    </div>
+    <div class="body" id="menuBody"><div class="empty">Loading menu…</div></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="screen" id="screen-orders">
+    <div class="topbar"><div class="brand"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="leaf-svg"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg><b>Your orders</b></div>
+      <span class="logout" onclick="logout()">Log out</span></div>
+    <div class="body" id="ordersBody"><div class="empty">Loading…</div></div>
+  </div>
+
+  <!-- CART + DELIVERY -->
+  <div class="screen" id="screen-cart">
+    <div class="topbar"><button class="back-btn" onclick="go('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Your order</button><div style="width:20px"></div></div>
+    <div class="body" id="cartBody"></div>
+  </div>
+
+  <!-- PAYMENT -->
+  <div class="screen" id="screen-pay">
+    <div class="topbar"><button class="back-btn" onclick="go('cart')"><svg viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Pay &amp; confirm</button><div style="width:20px"></div></div>
+    <div class="body" id="payBody"></div>
+  </div>
+
+  <!-- TRACK / ORDER DETAIL -->
+  <div class="screen" id="screen-track">
+    <div class="topbar"><button class="back-btn" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Order status</button><div style="width:20px"></div></div>
+    <div class="body" id="trackBody"></div>
+  </div>
+
+  <div class="modal-bg" id="variantModal" onclick="if(event.target===this)closeVariant()">
+    <div class="vmodal"><h3 id="vmTitle"></h3><div class="sub">Choose an option to add</div>
+      <div id="vmOptions"></div>
+      <div class="cancel" onclick="closeVariant()">Cancel</div></div>
+  </div>
+
+  <div class="cartbar" id="cartbar" onclick="go('cart')">
+    <div><div style="font-size:13px;opacity:.85" id="cbCount">0 items</div><div style="font-weight:700;font-size:16px" id="cbTotal">₹0</div></div>
+    <div style="font-weight:700;display:flex;align-items:center;gap:6px">View order →</div>
+  </div>
+
+  <div class="botnav" id="botnav">
+    <button data-nav="menu" class="sel" onclick="go('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10" stroke-linecap="round"/></svg>Menu</button>
+    <button data-nav="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4" stroke-linecap="round"/></svg>Orders<span class="nbadge" id="ordersBadge" style="display:none">0</span></button>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cg-api.js"></script>
+<script>
+const { CGApi, rupee, toast, STATUS_LABEL } = CG;
+const api = CGApi('customer');
+let MENU = [], CART = {}, DEALS = [], selectedDeal = null, activeSection = 'Food';
+let ADDRESSES = [], selectedAddressId = null;
+let currentOrderId = null, trackTimer = null, ordersTimer = null, socket = null;
+let selectedOrderType = 'DINE_IN';
+let selectedPaymentMethod = 'COUNTER';
+const $ = s => document.querySelector(s);
+
+const FLOW = [
+  ['payment_verification_pending','Order placed','Awaiting payment verification by counter'],
+  ['accepted','Payment verified','Order accepted'],
+  ['preparing','In the kitchen','Your food is being prepared'],
+  ['ready','Ready','Packed and ready for pickup'],
+  ['out_for_delivery','Out for delivery','On the way to you'],
+  ['delivered','Delivered','Enjoy your meal!'],
+  ['completed', 'Completed', 'Enjoy your meal!'],
+];
+const flowIndex = (s)=>FLOW.findIndex(f=>f[0]===s);
+
+/* ---------- NAV ---------- */
+function go(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('#screen-'+screen).classList.add('active');
+  window.scrollTo(0,0);
+  // bottom nav visible only on menu/orders
+  const navScreens = (screen==='menu'||screen==='orders');
+  $('#botnav').classList.toggle('show', navScreens);
+  $('#botnav').querySelectorAll('button').forEach(b=>b.classList.toggle('sel', b.dataset.nav===screen));
+  // cart bar only on menu
+  updateCartBar(screen);
+  // per-screen
+  if(screen==='cart') renderCart();
+  if(screen==='orders'){ loadOrders(); startOrdersPolling(); } else stopOrdersPolling();
+  if(screen==='track') startTracking(); else stopTracking();
+}
+
+/* ---------- AUTH ---------- */
+function showRegister(){ $('#loginForm').classList.add('hidden'); $('#registerForm').classList.remove('hidden'); $('#authTitle').textContent='Create account'; hideErr(); }
+function showLogin(){ $('#registerForm').classList.add('hidden'); $('#loginForm').classList.remove('hidden'); $('#authTitle').textContent='Welcome back'; hideErr(); }
+function showErr(m){ const e=$('#authErr'); e.textContent=m; e.classList.add('show'); }
+function hideErr(){ $('#authErr').classList.remove('show'); }
+async function doLogin(){
+  hideErr(); const btn=$('#loginBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{ await api.login($('#liEmail').value.trim(), $('#liPass').value); await enterApp(); }
+  catch(e){ showErr(e.message); btn.disabled=false; btn.textContent='Log in'; }
+}
+async function doRegister(){
+  hideErr(); const btn=$('#regBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{ await api.register({ name:$('#rgName').value.trim(), email:$('#rgEmail').value.trim(), phone:$('#rgPhone').value.trim(), password:$('#rgPass').value }); await enterApp(); }
+  catch(e){ showErr(e.message); btn.disabled=false; btn.textContent='Create account & start'; }
+}
+function logout(){ if(socket) socket.disconnect(); stopTracking(); stopOrdersPolling(); api.logout(); location.reload(); }
+
+async function enterApp(){
+  $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there');
+  connectRealtime();
+  await loadMenu();
+  loadDeals();
+  if (selectedOrderType === 'DELIVERY') {
+    loadAddresses();
+  }
+  refreshOrdersBadge();
+  go('menu');
+}
+function connectRealtime(){
+  if(socket) return;
+  socket = api.connectSocket({
+    'order:status_changed': ()=>{ if($('#screen-track').classList.contains('active')) renderTrack(); if($('#screen-orders').classList.contains('active')) loadOrders(); refreshOrdersBadge(); },
+    'order:cancelled': ()=>{ if($('#screen-track').classList.contains('active')) renderTrack(); refreshOrdersBadge(); },
+  });
+}
+
+/* ---------- MENU ---------- */
+async function loadMenu(){ try{ MENU = await api.get('/menu'); renderMenu(); }catch(e){ $('#menuBody').innerHTML = `<div class="empty">Couldn't load menu: ${e.message}</div>`; } }
+async function loadDeals(){ try{ DEALS = await api.get('/orders/deals'); }catch{ DEALS=[]; } }
+
+function setSection(sec){
+  activeSection = sec;
+  $('#sectionTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('sel', b.dataset.sec===sec));
+  renderMenu();
+}
+function ckey(id, variant){ return variant ? id+'::'+variant : id; }
+function renderMenu(){
+  const q = $('#search').value.trim().toLowerCase();
+  const cats = {};
+  MENU.filter(it=>(it.section||'Food')===activeSection).filter(it=>!q || it.name.toLowerCase().includes(q))
+    .forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
+  const keys = Object.keys(cats);
+  if(!keys.length){ $('#menuBody').innerHTML=`<div class="empty">No ${activeSection.toLowerCase()} items${q?' match your search':''}.</div>`; return; }
+  let html='';
+  keys.forEach(cat=>{
+    html += `<div class="cat-head"><h3>${cat}</h3></div>`;
+    cats[cat].forEach(it=>{
+      let priceHtml;
+      if(it.hasVariants) priceHtml = `from ${rupee(it.price)}`;
+      else if(it.developerDiscount>0 && it.originalPrice>it.price)
+        priceHtml = `<span style="text-decoration:line-through;color:var(--ink-faint);font-weight:500">${rupee(it.originalPrice)}</span> ${rupee(it.price)}`;
+      else priceHtml = rupee(it.price);
+      html += `<div class="item"><div class="item-main"><div class="item-name">${it.name}</div>
+        ${it.description?`<div class="item-desc">${it.description}</div>`:''}
+        <div class="item-price">${priceHtml}</div></div><div class="add-col" id="add-${it.id}"></div></div>`;
+    });
+  });
+  html += ``;
+  $('#menuBody').innerHTML = html;
+  Object.values(cats).flat().forEach(it=>renderAdd(it));
+}
+function renderAdd(it){
+  const slot=document.getElementById('add-'+it.id); if(!slot) return;
+  if(it.hasVariants){
+    const inCart = cartItems().filter(c=>c.item.id===it.id).reduce((s,c)=>s+c.qty,0);
+    slot.innerHTML = `<button class="add-btn" onclick="openVariant('${it.id}')">+</button>${inCart?`<div class="add-from">${inCart} in cart</div>`:''}`;
+    return;
+  }
+  const qty = CART[it.id]?.qty || 0;
+  slot.innerHTML = qty>0
+    ? `<div class="stepper"><button onclick="chg('${it.id}',null,-1)">−</button><span>${qty}</span><button onclick="chg('${it.id}',null,1)">+</button></div>`
+    : `<button class="add-btn" onclick="chg('${it.id}',null,1)">+</button>`;
+}
+function chg(id, variant, d){
+  const it = MENU.find(m=>m.id===id); if(!it) return;
+  const key = ckey(id, variant);
+  const unitPrice = variant ? (it.variants.find(v=>v.name===variant)?.price ?? it.price) : it.price;
+  if(!CART[key]) CART[key]={item:it, variant:variant||null, unitPrice, qty:0};
+  CART[key].qty += d;
+  if(CART[key].qty<=0) delete CART[key];
+  renderAdd(it); updateCartBar();
+}
+/* variant modal */
+function openVariant(id){
+  const it = MENU.find(m=>m.id===id); if(!it||!it.hasVariants) return;
+  $('#vmTitle').textContent = it.name;
+  $('#vmOptions').innerHTML = it.variants.map((v,i)=>`<div class="vopt" onclick="addVariant('${id}',${i})"><b>${v.name}</b><span class="vp">${rupee(v.price)}</span></div>`).join('');
+  $('#variantModal').classList.add('show');
+}
+function closeVariant(){ $('#variantModal').classList.remove('show'); }
+function addVariant(id, idx){ const it=MENU.find(m=>m.id===id); const v=it.variants[idx]; chg(id, v.name, 1); closeVariant(); toast('Added · '+it.name+' ('+v.name+')'); }
+
+function cartItems(){ return Object.values(CART); }
+function cartCount(){ return cartItems().reduce((s,c)=>s+c.qty,0); }
+function cartSubtotal(){ return cartItems().reduce((s,c)=>s+c.unitPrice*c.qty,0); }
+function updateCartBar(){
+  const n=cartCount();
+  const onMenu = $('#screen-menu').classList.contains('active');
+  const badge=$('#cartBadge'); badge.style.display=n?'flex':'none'; badge.textContent=n;
+  $('#cartbar').classList.toggle('show', n>0 && onMenu);
+  $('#cbCount').textContent = n+' item'+(n!==1?'s':''); $('#cbTotal').textContent = rupee(cartSubtotal());
+}
+
+/* ---------- ADDRESSES ---------- */
+async function loadAddresses(){ try{ ADDRESSES = await api.get('/addresses'); if(!selectedAddressId && ADDRESSES.length) selectedAddressId = ADDRESSES[0].id; }catch{ ADDRESSES=[]; } }
+function addressLines(a){ return `${a.buildingName} · ${a.floorSeat}<br>${a.deliveryName} · ${a.deliveryPhone}`; }
+function selectAddress(id){ selectedAddressId = id; renderCart(); }
+async function saveAddress(){
+  const payload = { label:$('#afLabel').value.trim(), deliveryName:$('#afName').value.trim(), deliveryPhone:$('#afPhone').value.trim(), buildingName:$('#afBuilding').value.trim(), floorSeat:$('#afFloor').value.trim() };
+  if(!payload.deliveryName||!payload.deliveryPhone||!payload.buildingName||!payload.floorSeat){ toast('Fill all address fields'); return; }
+  try{ const a = await api.post('/addresses', payload); ADDRESSES.unshift(a); selectedAddressId=a.id; toast('Address saved'); renderCart(); }
+  catch(e){ toast(e.message.replace(/\n/g,' ')); }
+}
+async function removeAddress(id, ev){
+  if(ev) ev.stopPropagation();
+  if(!confirm('Remove this saved address?')) return;
+  try{ await api.del('/addresses/'+id); ADDRESSES = ADDRESSES.filter(a=>a.id!==id); if(selectedAddressId===id) selectedAddressId = ADDRESSES[0]?.id || null; toast('Address removed'); renderCart(); }
+  catch(e){ toast(e.message); }
+}
+
+/* ---------- CART ---------- */
+function renderCart(){
+  const arr=cartItems();
+  if(!arr.length){ $('#cartBody').innerHTML=`<div class="empty">Your cart is empty.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
+  let html='';
+  arr.forEach(c=>{
+    const vArg = c.variant ? `'${c.variant.replace(/'/g,"\\'")}'` : 'null';
+    const nm = c.item.name + (c.variant?` · ${c.variant}`:'');
+    html += `<div class="cart-item"><div style="flex:1"><div class="item-name">${nm}</div><div class="item-price">${rupee(c.unitPrice)}</div></div>
+      <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
+  });
+  const sub=cartSubtotal();
+  // drop a chosen scheme that no longer qualifies
+  if(selectedDeal && sub < selectedDeal.minOrderAmount) selectedDeal = null;
+  const disc = selectedDeal ? estimateDiscount(selectedDeal, sub) : 0;
+  
+  // Order Type
+  html += `<div class="section-title">Order Type</div><div class="seg">
+    <button class="${selectedOrderType==='DINE_IN'?'sel':''}" onclick="selectOrderType('DINE_IN')">Dine-in</button>
+    <button class="${selectedOrderType==='TAKEAWAY'?'sel':''}" onclick="selectOrderType('TAKEAWAY')">Takeaway</button>
+    <button class="${selectedOrderType==='DELIVERY'?'sel':''}" onclick="selectOrderType('DELIVERY')">Delivery</button>
+  </div>`;
+  
+  // Context fields
+  html += `<div id="context-fields"></div>`;
+  
+  // discount schemes (choose one)
+  if(DEALS.length){
+    const sorted = [...DEALS].sort((a,b)=>a.minOrderAmount-b.minOrderAmount);
+    html += `<div class="section-title">Discount schemes <span class="muted" style="font-weight:400;font-size:12px">choose one</span></div><div class="deal-pick">`;
+    html += `<div class="deal-chip ${!selectedDeal?'sel':''}" onclick="pickDeal(null)"><b>No discount</b></div>`;
+    sorted.forEach(d=>{
+      const ok = sub>=d.minOrderAmount;
+      const save = estimateDiscount(d, sub);
+      const cond = d.discountType==='flat'?`${rupee(d.discountValue)} off`:`${d.discountValue}% off${d.maxDiscountAmount?' up to '+rupee(d.maxDiscountAmount):''}`;
+      html += `<div class="deal-chip ${selectedDeal&&selectedDeal.id===d.id?'sel':''}" style="${ok?'':'opacity:.5;cursor:not-allowed'}" ${ok?`onclick="pickDeal('${d.id}')"`:''}>
+        <b>${d.title}</b><span class="muted">${cond} · min ${rupee(d.minOrderAmount)}</span>
+        ${ok?`<span style="color:var(--leaf-deep);font-weight:700;font-size:12px">You save ${rupee(save)}</span>`:`<span class="muted" style="font-size:11px">Add ${rupee(d.minOrderAmount-sub)} more</span>`}</div>`;
+    });
+    html += `</div>`;
+  }
+  
+  // Payment Method
+  html += `<div class="section-title">Payment Method</div><div class="seg">
+    <button class="${selectedPaymentMethod==='COUNTER'?'sel':''}" onclick="selectPaymentMethod('COUNTER')">Pay at Counter</button>
+    <button class="${selectedPaymentMethod==='ONLINE'?'sel':''}" onclick="selectPaymentMethod('ONLINE')">Pay with App</button>
+  </div>`;
+
+  // per-order notes
+  html += `<div class="section-title">Special requests for the kitchen (optional)</div>
+    <div class="field"><textarea id="dSpecial" placeholder="e.g. less spicy, no onions, extra napkins">${savedSpecial}</textarea></div>`;
+
+  if (selectedOrderType === 'DELIVERY') {
+    html += `<div class="section-title">Delivery note (optional)</div>
+      <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival, near reception">${savedNote}</textarea></div>`;
+  }
+  
+  // bill
+  html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
+    ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
+    <div class="bill-row total"><span>To pay</span><span>${rupee(sub-disc)}</span></div></div>
+    <div style="margin-top:16px"><button class="btn block" id="continueBtn" onclick="goToPayment()">Continue →</button></div>`;
+  $('#cartBody').innerHTML = html;
+  renderContextFields();
+  updateContinueButton();
+}
+
+function selectOrderType(type) {
+  selectedOrderType = type;
+  if (type === 'DELIVERY' && ADDRESSES.length === 0) {
+    loadAddresses();
+  }
+  renderCart();
+}
+
+function selectPaymentMethod(method) {
+  selectedPaymentMethod = method;
+  renderCart();
+}
+
+function renderContextFields() {
+  let html = '';
+  if (selectedOrderType === 'DINE_IN') {
+    html = `<div class="section-title">Dine-in Details</div>
+      <div class="field"><label>Table Number *</label><input id="ctxTable" placeholder="e.g. 12A"></div>
+      <div class="field"><label>Your Name (optional)</label><input id="ctxName" value="${api.user?.name||''}"></div>`;
+  } else if (selectedOrderType === 'TAKEAWAY') {
+    html = `<div class="section-title">Takeaway Details</div>
+      <div class="field"><label>Your Name *</label><input id="ctxName" value="${api.user?.name||''}"></div>
+      <div class="field"><label>Phone Number *</label><input id="ctxPhone" inputmode="tel" value="${api.user?.phone||''}"></div>`;
+  } else if (selectedOrderType === 'DELIVERY') {
+    html += `<div class="section-title">Deliver to</div>`;
+    ADDRESSES.forEach(a=>{
+      html += `<div class="addr-card ${selectedAddressId===a.id?'sel':''}" onclick="selectAddress('${a.id}')">
+        <div class="addr-radio"></div>
+        <div class="addr-main"><div class="addr-label">${a.label?`<span class="addr-tag">${a.label}</span>`:''}${a.deliveryName}</div>
+          <div class="addr-line">${a.buildingName} · ${a.floorSeat}<br>📞 ${a.deliveryPhone}</div></div>
+        <button class="addr-del" onclick="removeAddress('${a.id}',event)" title="Remove">✕</button></div>`;
+    });
+    html += `<div class="addr-add" onclick="document.getElementById('addrForm').classList.toggle('show')">＋ Add a new address</div>
+      <div class="addr-form" id="addrForm">
+        <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
+        <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
+        <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
+        <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
+        <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
+        <button class="btn block soft" onclick="saveAddress()">Save address</button>
+      </div>`;
+  }
+  $('#context-fields').innerHTML = html;
+}
+
+function updateContinueButton() {
+    const btn = $('#continueBtn');
+    if (selectedPaymentMethod === 'COUNTER') {
+        btn.textContent = 'Place Order';
+    } else {
+        btn.textContent = 'Continue to Payment →';
+    }
+}
+let savedSpecial = '', savedNote = '';
+function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id) : null; renderCart(); }
+function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
+function estimateDiscount(deal, sub){
+  let d = deal.discountType==='flat' ? deal.discountValue : sub*deal.discountValue/100;
+  if(deal.discountType==='percent' && deal.maxDiscountAmount) d=Math.min(d, deal.maxDiscountAmount);
+  return Math.min(d, sub*0.15);
+}
+
+/* ---------- PAYMENT ---------- */
+let pendingContext = null, pendingSpecial = '';
+async function goToPayment(){
+  stashNotes();
+  let context = {};
+  if (selectedOrderType === 'DELIVERY') {
+    const addr = ADDRESSES.find(a=>a.id===selectedAddressId);
+    if(!addr){ toast('Choose or add a delivery address'); document.getElementById('addrForm')?.classList.add('show'); return; }
+    context = { deliveryName:addr.deliveryName, deliveryPhone:addr.deliveryPhone, buildingName:addr.buildingName, floorSeat:addr.floorSeat, deliveryNotes:savedNote.trim() };
+  } else if (selectedOrderType === 'TAKEAWAY') {
+    context = { deliveryName: $('#ctxName').value.trim(), deliveryPhone: $('#ctxPhone').value.trim() };
+  } else if (selectedOrderType === 'DINE_IN') {
+    context = { tableNumber: $('#ctxTable').value.trim(), deliveryName: $('#ctxName').value.trim() };
+  }
+  
+  pendingContext = context;
+  pendingSpecial = savedSpecial.trim();
+
+  try{ 
+    const validationPayload = { ...pendingContext };
+    if (selectedOrderType === 'DELIVERY') {
+      await api.post('/orders/validate-delivery', { delivery: validationPayload });
+    }
+  }
+  catch(e){ toast(e.message.replace(/\n/g,' ')); return; }
+
+  if (selectedPaymentMethod === 'COUNTER') {
+    placeOrder();
+    return;
+  }
+  
+  go('pay');
+  $('#payBody').innerHTML = `<div class="empty">Generating secure UPI QR…</div>`;
+  try{
+    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})) };
+    if(selectedDeal) payload.dealCode = selectedDeal.id;
+    const qr = await api.post('/orders/payment-qr', payload);
+    renderPayment(qr);
+  }catch(e){ $('#payBody').innerHTML = `<div class="empty">Couldn't generate QR: ${e.message}<br><br><button class="btn ghost" onclick="go('cart')">Back</button></div>`; }
+}
+async function renderPayment(qr){
+  const settings = await api.get('/settings/upi');
+  const upiId = settings.upi_id;
+
+  $('#payBody').innerHTML = `
+    <div class="qr-box"><img src="${qr.qr}" alt="UPI QR code">
+      <div class="qr-amt">${rupee(qr.amount)}</div>
+      <div class="qr-vpa">Pay to <b>${upiId}</b> · ${qr.payeeName}</div>
+      <a class="btn soft upi-link" href="${qr.upiUri}">Open in UPI app</a></div>
+    <div class="pay-steps"><b>How to pay</b><br>1. Scan the QR with any UPI app (GPay / PhonePe / Paytm).<br>2. The amount <b>${rupee(qr.amount)}</b> is prefilled — just confirm.<br>3. Copy the <b>UPI transaction ID</b> from your app and paste it below.</div>
+    <div class="field"><label>UPI Transaction ID *</label><input id="txnId" placeholder="e.g. 4198XXXXXXXX"></div>
+    <button class="btn block" id="placeBtn" onclick="placeOrder()">I've paid — place order</button>`;
+}
+async function placeOrder(){
+  const transactionId = selectedPaymentMethod === 'ONLINE' ? $('#txnId').value.trim() : null;
+  if(selectedPaymentMethod === 'ONLINE' && !transactionId){ toast('Enter the UPI transaction ID'); return; }
+  
+  const btn=$('#placeBtn') || $('#continueBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+
+  try{
+    const payload = { 
+      items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), 
+      orderType: selectedOrderType,
+      paymentMethod: selectedPaymentMethod,
+      context: pendingContext, 
+      transactionId 
+    };
+    if(pendingSpecial) payload.specialRequest = pendingSpecial;
+    if(selectedDeal) payload.dealCode = selectedDeal.id;
+    
+    const order = await api.post('/orders', payload);
+    currentOrderId = order.id;
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote='';
+    refreshOrdersBadge();
+    go('track');
+    toast('Order placed!');
+  }catch(e){ 
+    toast(e.message.replace(/\n/g,' ')); 
+    btn.disabled=false; 
+    btn.textContent = selectedPaymentMethod === 'COUNTER' ? 'Place Order' : "I've paid — place order";
+  }
+}
+
+/* ---------- ORDERS TAB ---------- */
+async function loadOrders(){
+  let resp;
+  try{ resp = await api.get('/orders?limit=10'); }catch(e){ $('#ordersBody').innerHTML=`<div class="empty">${e.message}</div>`; return; }
+  const orders = resp.orders||[];
+  if(!orders.length){ $('#ordersBody').innerHTML=`<div class="empty">No orders yet.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
+  $('#ordersBody').innerHTML = orders.map(orderCard).join('');
+}
+function orderCard(o){
+  const idx = flowIndex(o.status);
+  const cancelled = o.status==='cancelled'||o.status==='payment_expired';
+  const steps = FLOW.map((f,i)=>`<div class="ms ${cancelled?'cancel':(i<=idx&&idx>=0?'on':'')}"></div>`).join('');
+  const itemsTxt = o.items.map(i=>`${i.quantity}× ${i.name}`).join(', ');
+  const date = new Date(o.timestamps?.created || o.createdAt || Date.now()).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  return `<div class="ord-card">
+    <div class="ord-top"><span class="ord-id">#${o.orderNumber}</span><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]||o.status}</span></div>
+    <div class="ord-date">${date} · ${rupee(o.financials.customerPays)}</div>
+    <div class="ministeps">${steps}</div>
+    <div class="ord-items">${itemsTxt}</div>
+    <div class="ord-actions"><button class="btn sm ghost" onclick="openOrder('${o.id}')">Track</button>
+      <button class="btn sm" onclick="reorder('${o.id}')">Reorder</button></div></div>`;
+}
+function openOrder(id){ currentOrderId=id; go('track'); }
+function startOrdersPolling(){ stopOrdersPolling(); ordersTimer=setInterval(loadOrders, 5000); }
+function stopOrdersPolling(){ clearInterval(ordersTimer); ordersTimer=null; }
+async function refreshOrdersBadge(){
+  try{
+    const resp = await api.get('/orders?limit=10');
+    const active = (resp.orders||[]).filter(o=>!['delivered','cancelled','payment_expired','completed'].includes(o.status)).length;
+    const b=$('#ordersBadge'); b.style.display=active?'flex':'none'; b.textContent=active;
+  }catch{}
+}
+
+/* ---------- REORDER ---------- */
+async function reorder(orderId){
+  let order;
+  try{ order = await api.get('/orders/'+orderId); }catch(e){ toast('Could not load order'); return; }
+  if(!MENU.length){ await loadMenu(); }
+  const availById = new Map(MENU.map(m=>[m.id, m]));
+  const unavailable = [];
+  const toAdd = [];
+  order.items.forEach(it=>{
+    const m = it.menuItemId && availById.get(it.menuItemId);
+    if(!m){ unavailable.push(it.name); return; }
+    // for sized Bar items, the chosen variant must still exist
+    if(it.variant){
+      const v = (m.variants||[]).find(x=>x.name===it.variant);
+      if(!v){ unavailable.push(it.name); return; }
+      toAdd.push({m, variant:v.name, unitPrice:v.price, qty:it.quantity});
+    } else if(m.hasVariants){
+      unavailable.push(it.name); // an old line lost its option
+    } else {
+      toAdd.push({m, variant:null, unitPrice:m.price, qty:it.quantity});
+    }
+  });
+  if(unavailable.length){ toast('Some items are not available: ' + unavailable.join(', ')); return; }
+  CART = {};
+  toAdd.forEach(({m,variant,unitPrice,qty})=>{ CART[ckey(m.id,variant)] = { item:m, variant, unitPrice, qty }; });
+  selectedDeal = null;
+  renderMenu();
+  toast('Items added to cart');
+  go('cart');
+}
+
+/* ---------- TRACK ---------- */
+function startTracking(){ if(!currentOrderId) return; renderTrack(); stopTracking(); trackTimer=setInterval(renderTrack, 5000); if(socket) socket.emit('subscribe:order', currentOrderId); }
+function stopTracking(){ clearInterval(trackTimer); trackTimer=null; }
+async function renderTrack(){
+  if(!currentOrderId) return;
+  let order; try{ order = await api.get('/orders/'+currentOrderId); }catch{ return; }
+  const cancelled = order.status==='cancelled' || order.status==='payment_expired';
+  const curIdx = flowIndex(order.status);
+  const itemsLine = order.items.reduce((s,i)=>s+i.quantity,0);
+  let html = `<div class="order-id">#${order.orderNumber}</div>
+    <div class="order-sub">${itemsLine} items · ${rupee(order.financials.customerPays)} · ${order.context.building || order.context.tableNumber}</div>`;
+  if(order.status==='delivered' || order.status === 'completed'){ html += `<div class="celebrate show"><div style="font-size:26px">✓</div><b>Delivered — enjoy your meal!</b></div>`; }
+  if(cancelled){ html += `<div class="cancel-banner show">This order was ${(STATUS_LABEL[order.status]||order.status).toLowerCase()}.</div>`; }
+  if(!cancelled){
+    html += `<div class="progress">` + FLOW.map((f,i)=>{
+      const cls = i<curIdx?'done':i===curIdx?'cur':'pending';
+      return `<div class="pstep ${cls}"><div class="dotcol"><div class="pdot">${i<curIdx?'✓':i+1}</div><div class="pline"></div></div>
+        <div class="ptxt"><b>${f[1]}</b><small>${i===curIdx?f[2]:''}</small></div></div>`;
+    }).join('') + `</div>`;
+  }
+  if(order.deliveryAgent && order.status==='out_for_delivery'){
+    html += `<div class="agent-box"><div class="agent-ic">🛵</div>
+      <div style="flex:1"><div style="font-weight:700">${order.deliveryAgent.name}</div><div class="muted" style="font-size:12.5px">Your delivery partner is on the way</div></div>
+      <a class="btn sm" href="tel:${order.deliveryAgent.phone}">📞 Call</a></div>`;
+  }
+  if(order.specialRequest){ html += `<div class="spec-box">⚠ Special request: ${order.specialRequest}</div>`; }
+  html += `<div class="bill">${order.items.map(i=>`<div class="bill-row"><span>${i.quantity}× ${i.name}</span><span>${rupee(i.total)}</span></div>`).join('')}
+    ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
+    <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>`;
+    if (order.orderType === 'DELIVERY') {
+        html += `<div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.context.floorSeat}, ${order.context.building}</div>`;
+    }
+    html += `<div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;
+  $('#trackBody').innerHTML = html;
+}
+
+/* ---------- INIT ---------- */
+(async function init(){
+  if(api.isAuthed()){ try{ await api.get('/auth/me'); await enterApp(); }catch{ api.logout(); } }
+})();
+</script>
+</body>
+</html>

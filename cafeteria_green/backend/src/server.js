@@ -8,6 +8,11 @@ import helmet from 'helmet';
 import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.routes.js';
 import menuRoutes from './routes/menu.routes.js';
@@ -61,6 +66,15 @@ app.use(cors());
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.use(express.json());
+
+// ── Pretty URL Routes ──
+const sendPage = (page) => (req, res) => res.sendFile(page, { root: '../cafeteria-green' });
+app.get('/', sendPage('index.html'));
+app.get('/admin', sendPage('admin.html'));
+app.get('/customer', sendPage('customer.html'));
+app.get('/delivery', sendPage('delivery.html'));
+app.get('/developer', sendPage('developer.html'));
+app.get('/kitchen', sendPage('kitchen.html'));
 
 // Serve the connected Cafeteria Green app (customer/admin/delivery/developer) same-origin.
 // Available at both / and /app for convenience.
