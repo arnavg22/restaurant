@@ -372,7 +372,7 @@ function estimateDiscount(deal, sub){
   if(deal.discountType==='percent' && deal.maxDiscountAmount) d=Math.min(d, deal.maxDiscountAmount);
   return Math.min(d, sub*0.15);
 }
-function setOrderType(t){ stashNotes(); orderType=t; renderCart(); }
+function setOrderType(t){ stashNotes(); stashContext(); orderType=t; if(t==='DELIVERY') paymentMethod='ONLINE'; renderCart(); }
 function setPaymentMethod(m){ stashNotes(); paymentMethod=m; renderCart(); }
 
 function renderCart(){
@@ -384,10 +384,10 @@ function renderCart(){
     <div class="seg"><button class="${orderType==='DELIVERY'?'sel':''}" onclick="setOrderType('DELIVERY')">🛵 Delivery</button>
     <button class="${orderType==='DINE_IN'?'sel':''}" onclick="setOrderType('DINE_IN')">🍽 Dine-in</button>
     <button class="${orderType==='TAKEAWAY'?'sel':''}" onclick="setOrderType('TAKEAWAY')">📦 Takeaway</button></div>`;
-  // Payment method selector
+  // Payment method selector (counter not available for delivery)
   html += `<div class="section-title">Payment</div>
     <div class="seg"><button class="${paymentMethod==='ONLINE'?'sel':''}" onclick="setPaymentMethod('ONLINE')">📱 Pay Online (UPI)</button>
-    <button class="${paymentMethod==='COUNTER'?'sel':''}" onclick="setPaymentMethod('COUNTER')">💵 Pay at Counter</button></div>`;
+    <button class="${paymentMethod==='COUNTER'?'sel':''}" ${orderType==='DELIVERY'?'disabled style="opacity:.4;cursor:not-allowed"':''}onclick="setPaymentMethod('COUNTER')">💵 Pay at Counter</button></div>`;
   // Cart items
   html += `<div class="section-title">Items</div>`;
   arr.forEach(c=>{
