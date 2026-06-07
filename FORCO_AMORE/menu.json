@@ -1,0 +1,1142 @@
+[
+  {
+    "name": "Bun Maska",
+    "price": 49,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Kanda Poha",
+    "price": 69,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "South Indian Upma",
+    "price": 69,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Besan Omelette",
+    "price": 69,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Vada Pav",
+    "price": 69,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Puri Bhaji",
+    "price": 79,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Idli with Podi",
+    "price": 119,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Savory Veg Pancake",
+    "price": 119,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Sautéed Garden Vegetables",
+    "price": 199,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Pakoda",
+    "price": 129,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Chole Bhature (Till 3 PM)",
+    "price": 149,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Berry Chia Tapioca Pudding",
+    "price": 149,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Blueberry Banana Overnight Oats",
+    "price": 149,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Boiled Eggs & Butter Toast",
+    "price": 79,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Masala Omelette",
+    "price": 99,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Keema Pav",
+    "price": 119,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Sausage with Toast",
+    "price": 149,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Scrambled Eggs with Butter Toast",
+    "price": 129,
+    "category": "Morning Feast",
+    "section": "Food"
+  },
+  {
+    "name": "Alfredo Creamy White Sauce Pasta",
+    "price": 149,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Arrabbiata Pasta",
+    "price": 149,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Aglio e Olio",
+    "price": 129,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Florentine Pasta",
+    "price": 149,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Ravioli Spinach Corn",
+    "price": 199,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Ravioli Arrabbiata",
+    "price": 199,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Ravioli Alfredo",
+    "price": 199,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Basil Pesto Pasta",
+    "price": 229,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Creamy Fusion Pasta",
+    "price": 179,
+    "category": "Pasta",
+    "section": "Food"
+  },
+  {
+    "name": "Bird Nest",
+    "price": 169,
+    "category": "Signature Dishes",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese Filled Pasta",
+    "price": 229,
+    "category": "Signature Dishes",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Steak Bowl",
+    "price": 249,
+    "category": "Signature Dishes",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Steak Bowl",
+    "price": 299,
+    "category": "Signature Dishes",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Meat Balls",
+    "price": 299,
+    "category": "Signature Dishes",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Tadka Rice",
+    "price": 99,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Rajma Rice",
+    "price": 129,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Chole Rice",
+    "price": 129,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Chole Kulche",
+    "price": 129,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Shahi Paneer Rice",
+    "price": 159,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Executive Thali",
+    "description": "Dal Tadka, MixVeg, Rice, 2 Chapatis, Salad, Raita",
+    "price": 189,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Deluxe Thali",
+    "description": "Dal Makhani, Sahi Paneer, MixVeg, Rice, 2 Chapatis, Salad, Raita, Desert",
+    "price": 269,
+    "category": "Lunch Combos",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Delight Wrap",
+    "price": 99,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Keema Roll",
+    "price": 119,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Pesto Veggie Wrap",
+    "price": 129,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Tikka Wrap",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Fusion Wrap",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Kathi Roll",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Kathi Roll",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Kathi Roll",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Spicy Paneer Wrap",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Crispy Paneer Wrap",
+    "price": 169,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Wrap",
+    "price": 119,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Kathi Roll",
+    "price": 149,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Masala Egg Wrap",
+    "price": 169,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Kathi Roll",
+    "price": 179,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Tangy Chicken Wrap",
+    "price": 179,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Peri Peri Chicken Wrap",
+    "price": 189,
+    "category": "Wraps & Rolls",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Makhani",
+    "price": 199,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Tadka",
+    "price": 199,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Rajma",
+    "price": 199,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Chole",
+    "price": 199,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Kadahi Paneer",
+    "price": 269,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Shahi Paneer",
+    "price": 269,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Mix Veg",
+    "price": 269,
+    "category": "Indian Mains",
+    "section": "Food"
+  },
+  {
+    "name": "Steamed Rice",
+    "price": 99,
+    "category": "Rice/Bread",
+    "section": "Food"
+  },
+  {
+    "name": "Jeera Rice",
+    "price": 119,
+    "category": "Rice/Bread",
+    "section": "Food"
+  },
+  {
+    "name": "Matar Pulao",
+    "price": 129,
+    "category": "Rice/Bread",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Briyani",
+    "price": 199,
+    "category": "Rice/Bread",
+    "section": "Food"
+  },
+  {
+    "name": "Tawa Roti",
+    "price": 12,
+    "category": "Rice/Bread",
+    "section": "Food"
+  },
+  {
+    "name": "Thousand Island Sauce",
+    "price": 25,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Tartar Sauce",
+    "price": 25,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Sriracha Sauce",
+    "price": 45,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Honey Lemon Dip",
+    "price": 25,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese Smoked Dip",
+    "price": 35,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese and Garlic Dip",
+    "price": 35,
+    "category": "Dips & Sauces",
+    "section": "Food"
+  },
+  {
+    "name": "Espresso Shot",
+    "price": 129,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Americano",
+    "price": 149,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Cappuccino",
+    "price": 159,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Café Latte",
+    "price": 169,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Café Mocha",
+    "price": 169,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Cortado",
+    "price": 169,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Spanish Latte",
+    "price": 179,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Cinnamon Cappuccino",
+    "price": 179,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Irish Coffee",
+    "price": 179,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Vietnamese Coffee",
+    "price": 179,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Desi Chai",
+    "price": 49,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Green Tea",
+    "price": 59,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Ginger Tea",
+    "price": 79,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Chamomile Tea",
+    "price": 79,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Lemon Tea",
+    "price": 89,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Masala Chai",
+    "price": 99,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Butterfly Pea Tea",
+    "price": 99,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Iced Lemon Tea",
+    "price": 99,
+    "category": "Comfort Cup",
+    "section": "Food"
+  },
+  {
+    "name": "Loaded Chaat Style Fries",
+    "price": 59,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Loaded Creamy Fries Supreme",
+    "price": 79,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Masala Corn Cheese Shots",
+    "price": 79,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Korean Classic Fries",
+    "price": 79,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese Burst Bites",
+    "price": 199,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Cheesy Garlic Bread",
+    "price": 99,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Tomato Bruschetta",
+    "price": 99,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Spiced Potato Croquettes",
+    "price": 119,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Cheesy Jalapeño Bites",
+    "price": 149,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Loaded Paneer Nachos",
+    "price": 199,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Peri Peri Paneer Pops",
+    "price": 219,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Crispy Chicken Popcorn Bites",
+    "price": 199,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Spiced Chicken Nuggets",
+    "price": 199,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken & Cheese Loaded Fries",
+    "price": 219,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Wings",
+    "price": 259,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Sriracha Chicken Wings",
+    "price": 269,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "White Velvet Chicken Wings",
+    "price": 269,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Barbeque Chicken Wings",
+    "price": 269,
+    "category": "Fusion Snacks & Sides",
+    "section": "Food"
+  },
+  {
+    "name": "Desi Vibes Sandwich",
+    "price": 59,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Coleslaw Sandwich",
+    "price": 59,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Peri Peri Potato Smash Sandwich",
+    "price": 59,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Curd Sandwich",
+    "price": 89,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Club Sandwich",
+    "price": 89,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Classic Veggie Toastie Deluxe",
+    "price": 89,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Spinach Corn Sandwich",
+    "price": 89,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Garden Melt Sandwich",
+    "price": 99,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Mediterranean Focaccia Sandwich",
+    "price": 99,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Pesto Paneer Sandwich",
+    "price": 99,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Guacamole Sandwich",
+    "price": 109,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Toast",
+    "price": 229,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Meltwich",
+    "price": 99,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Creamy Chicken Grilled Sandwich",
+    "price": 99,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Club Sandwich",
+    "price": 109,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Cheesy Keema Lava Sandwich",
+    "price": 109,
+    "category": "Sandwich",
+    "section": "Food"
+  },
+  {
+    "name": "Casear Salad",
+    "price": 129,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Russian Salad",
+    "price": 179,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Garden Green Salad",
+    "price": 199,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Caprese Salad",
+    "price": 219,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Sprouts Fruits and Nuts",
+    "price": 249,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Roasted Veggies Quinoa Salad",
+    "price": 249,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer/Tofu Ranch Salad",
+    "price": 249,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Cottage Cheese Caesar Salad",
+    "price": 249,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Pan-Grilled Vegetable Herbed Salad",
+    "price": 259,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Avocado (Corn/Mango) Bean Salad",
+    "price": 269,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Grilled Chicken Salad",
+    "price": 299,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Caesar Salad",
+    "price": 159,
+    "category": "Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Affogato",
+    "price": 159,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Iced Americano",
+    "price": 159,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Iced Coffee Delight",
+    "price": 169,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Orange Brew",
+    "price": 169,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Ice Cinnamon Soya Latte",
+    "price": 179,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Iced Vietnamese",
+    "price": 179,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Vanilla Cold Coffee",
+    "price": 189,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Choco Chip Frappe",
+    "price": 189,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Roasted Hazelnut Ice Coffee",
+    "price": 189,
+    "category": "Cold Cups",
+    "section": "Food"
+  },
+  {
+    "name": "Spiced Potato Slider Burger",
+    "price": 49,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Cottage Cheese Fusion Slider",
+    "price": 199,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese Burst Burger",
+    "price": 99,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Cottage Cheese Burger",
+    "price": 199,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Burger",
+    "price": 129,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Cottage Cheese Supreme Burger",
+    "price": 129,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Burger",
+    "price": 119,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Crispy Chicken Burger",
+    "price": 129,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Spicy Chicken Crunch Burger",
+    "price": 129,
+    "category": "Burger",
+    "section": "Food"
+  },
+  {
+    "name": "Virgin Mojito / Mint Cooler",
+    "price": 109,
+    "category": "Mocktail",
+    "section": "Food"
+  },
+  {
+    "name": "Mint Lemonade",
+    "price": 119,
+    "category": "Mocktail",
+    "section": "Food"
+  },
+  {
+    "name": "Blue Lagoon Cooler",
+    "price": 149,
+    "category": "Mocktail",
+    "section": "Food"
+  },
+  {
+    "name": "Fruit Punch Refresher",
+    "price": 179,
+    "category": "Mocktail",
+    "section": "Food"
+  },
+  {
+    "name": "Strawberry Cooler",
+    "price": 179,
+    "category": "Mocktail",
+    "section": "Food"
+  },
+  {
+    "name": "Samosa (1 Pc.)",
+    "price": 25,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Bread Pakora (1 Pc.)",
+    "price": 25,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Cutlet (2 Pcs.)",
+    "price": 35,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Cutlet (2 Pcs).",
+    "price": 69,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Momos",
+    "price": 89,
+    "category": "Evening Snacks",
+    "section": "Food",
+    "variants": [
+      {
+        "name": "Steamed",
+        "price": 89
+      },
+      {
+        "name": "Fried",
+        "price": 119
+      },
+      {
+        "name": "Kurkure",
+        "price": 129
+      }
+    ]
+  },
+  {
+    "name": "Veg Momos",
+    "price": 69,
+    "category": "Evening Snacks",
+    "section": "Food",
+    "variants": [
+      {
+        "name": "Steamed",
+        "price": 69
+      },
+      {
+        "name": "Fried",
+        "price": 99
+      },
+      {
+        "name": "Kurkure",
+        "price": 109
+      }
+    ]
+  },
+  {
+    "name": "Spinach Cigars",
+    "price": 119,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Cigars",
+    "price": 119,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Crispy Paneer",
+    "price": 129,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Duplex",
+    "price": 249,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Cigars",
+    "price": 179,
+    "category": "Evening Snacks",
+    "section": "Food"
+  },
+  {
+    "name": "Vanilla Shake",
+    "price": 149,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Oreo Shake",
+    "price": 159,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Chocolate Shake",
+    "price": 179,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Strawberry Shake",
+    "price": 189,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Mango Shake",
+    "price": 189,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Nutella Shake",
+    "price": 199,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Biscoff Shake",
+    "price": 199,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Mocha Brownie Shake",
+    "price": 199,
+    "category": "Shakes",
+    "section": "Food"
+  },
+  {
+    "name": "Margherita Pizza",
+    "price": 199,
+    "category": "Pizza",
+    "section": "Food"
+  },
+  {
+    "name": "Farmhouse Pizza",
+    "price": 149,
+    "category": "Pizza",
+    "section": "Food"
+  },
+  {
+    "name": "Veggie Overload Pizza",
+    "price": 179,
+    "category": "Pizza",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Supreme Pizza",
+    "price": 199,
+    "category": "Pizza",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Pepperoni Pizza",
+    "price": 229,
+    "category": "Pizza",
+    "section": "Food"
+  },
+  {
+    "name": "Spiced Chicken Pizza",
+    "price": 229,
+    "category": "Pizza",
+    "section": "Food"
+  }
+]
