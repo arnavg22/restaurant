@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { getPlatformDashboard, getOutstandingCommission, getSettlementHistory, createSettlement } from '../services/revenueService.js';
+import { getPlatformDashboard, getOutstandingCommission, getSettlementHistory, createSettlement, getDevUpi, setDevUpi, listCommissionPayments, verifyCommissionPayment, rejectCommissionPayment } from '../services/revenueService.js';
 import { createDeal, updateDeal, deactivateDeal, getAllDeals, getDealStats } from '../services/dealService.js';
 import { clampDevDiscount, visiblePrice } from '../services/orderService.js';
 import { PLATFORM_FEE_RATE } from '../config/constants.js';
@@ -109,6 +109,54 @@ router.get('/outstanding', async (req, res, next) => {
     try {
         const outstanding = await getOutstandingCommission();
         res.json(outstanding);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ══════════════════════════════════════════════
+// COMMISSION SETTLEMENT (restaurant → developer)
+// ══════════════════════════════════════════════
+
+// ── GET /dev/commission — summary + payout UPI + payment history ──
+router.get('/commission', async (req, res, next) => {
+    try {
+        const [outstanding, devUpi, payments] = await Promise.all([
+            getOutstandingCommission(),
+            getDevUpi(),
+            listCommissionPayments()
+        ]);
+        res.json({ summary: outstanding.summary, devUpi, payments });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PUT /dev/commission/upi — developer sets the UPI ID they get paid at ──
+router.put('/commission/upi', async (req, res, next) => {
+    try {
+        const upiId = await setDevUpi(req.body.upiId);
+        res.json({ upiId, message: 'Payout UPI ID saved' });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PATCH /dev/commission/payments/:id/verify — confirm a restaurant payment ──
+router.patch('/commission/payments/:id/verify', async (req, res, next) => {
+    try {
+        const payment = await verifyCommissionPayment(req.params.id);
+        res.json({ message: 'Payment verified — outstanding reduced', payment });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PATCH /dev/commission/payments/:id/reject — reject a restaurant payment ──
+router.patch('/commission/payments/:id/reject', async (req, res, next) => {
+    try {
+        const payment = await rejectCommissionPayment(req.params.id, req.body.reason);
+        res.json({ message: 'Payment rejected', payment });
     } catch (err) {
         next(err);
     }

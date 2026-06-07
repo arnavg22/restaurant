@@ -390,7 +390,7 @@ function renderCart(){
   if(!arr.length){ $('#cartBody').innerHTML=`<div class="empty">Your cart is empty.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
   let html='';
   arr.forEach(c=>{
-    const vArg = c.variant ? `'${c.variant.replace(/'/g,"\\'")}'` : 'null';
+    const vArg = c.variant ? `'${c.variant.replace(/'/g,"'")}'` : 'null';
     const nm = c.item.name + (c.variant?` · ${c.variant}`:'');
     html += `<div class="cart-item"><div style="flex:1"><div class="item-name">${nm}</div><div class="item-price">${rupee(c.unitPrice)}</div></div>
       <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
@@ -472,16 +472,18 @@ async function goToPayment(){
     renderPayment(qr);
   }catch(e){ $('#payBody').innerHTML = `<div class="empty">Couldn't generate QR: ${e.message}<br><br><button class="btn ghost" onclick="go('cart')">Back</button></div>`; }
 }
-function renderPayment(qr){
+async function renderPayment(qr){
+  const settings = await api.get('/settings/upi');
+  const upiId = settings.upi_id;
+
   $('#payBody').innerHTML = `
     <div class="qr-box"><img src="${qr.qr}" alt="UPI QR code">
       <div class="qr-amt">${rupee(qr.amount)}</div>
-      <div class="qr-vpa">Pay to <b>${qr.payeeVpa}</b> · ${qr.payeeName}</div>
+      <div class="qr-vpa">Pay to <b>${upiId}</b> · ${qr.payeeName}</div>
       <a class="btn soft upi-link" href="${qr.upiUri}">Open in UPI app</a></div>
     <div class="pay-steps"><b>How to pay</b><br>1. Scan the QR with any UPI app (GPay / PhonePe / Paytm).<br>2. The amount <b>${rupee(qr.amount)}</b> is prefilled — just confirm.<br>3. Copy the <b>UPI transaction ID</b> from your app and paste it below.</div>
     <div class="field"><label>UPI Transaction ID *</label><input id="txnId" placeholder="e.g. 4198XXXXXXXX"></div>
-    <button class="btn block" id="placeBtn" onclick="placeOrder()">I've paid — place order</button>
-    <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Your order reaches the kitchen only after the counter verifies this transaction ID.</div>`;
+    <button class="btn block" id="placeBtn" onclick="placeOrder()">I've paid — place order</button>`;
 }
 async function placeOrder(){
   const transactionId = $('#txnId').value.trim();

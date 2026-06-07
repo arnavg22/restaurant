@@ -76,6 +76,7 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
       <button data-view="pricing">Pricing &amp; Discounts</button>
       <button data-view="orders">Order Log</button>
       <button data-view="deals">Discount Schemes</button>
+      <button data-view="settlements">Settlements</button>
     </div>
 
     <div class="view active" id="view-overview">
@@ -112,6 +113,20 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
       </div>
       <div style="margin-top:18px" id="dealList"></div>
     </div>
+
+    <div class="view" id="view-settlements">
+      <div class="grid2">
+        <div class="card"><h3>Your payout UPI ID</h3>
+          <div class="muted" style="font-size:13px;margin-bottom:12px">The restaurant scans this UPI ID to pay down its commission. Set the account where you want to receive settlements.</div>
+          <div class="field"><label>Developer UPI ID</label><input id="devUpi" placeholder="e.g. platform@upi"></div>
+          <button class="btn dark" onclick="saveDevUpi()">Save UPI ID</button>
+        </div>
+        <div class="card"><h3>Commission summary</h3><div id="commSummary"></div></div>
+      </div>
+      <div class="card" style="margin-top:18px"><div class="section-head"><h3>Payment history</h3>
+        <div class="muted" style="font-size:12px">Verify a payment to clear it against the outstanding</div></div>
+        <div class="logwrap"><table class="log" id="payTable"></table></div></div>
+    </div>
   </div>
 </div>
 
@@ -145,6 +160,7 @@ $('#tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if
   $('#view-'+currentView).classList.add('active');
   if(currentView==='deals') loadDeals();
   if(currentView==='pricing') loadPricing();
+  if(currentView==='settlements') loadSettlements();
 });
 
 async function refresh(){
@@ -267,6 +283,40 @@ async function createDeal(){
 }
 async function deactivate(id){ try{ await api.patch('/dev/deals/'+id+'/deactivate'); toast('Deactivated'); loadDeals(); }catch(e){ toast(e.message); } }
 async function reactivate(id){ try{ await api.put('/dev/deals/'+id, { isActive:true }); toast('Reactivated'); loadDeals(); }catch(e){ toast(e.message); } }
+
+/* ---------- SETTLEMENTS (restaurant → developer commission) ---------- */
+async function loadSettlements(){
+  try{
+    const d = await api.get('/dev/commission');
+    $('#devUpi').value = d.devUpi || '';
+    const s = d.summary;
+    $('#commSummary').innerHTML = `
+      <div class="barrow"><div class="bl">Outstanding (owed now)</div><div class="bv" style="width:auto;flex:1;text-align:right;color:var(--bean);font-weight:700">${rupee(s.outstandingCommission)}</div></div>
+      <div class="barrow"><div class="bl">Total earned (15%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(s.grossOutstanding)}</div></div>
+      <div class="barrow"><div class="bl">Received (verified)</div><div class="bv" style="width:auto;flex:1;text-align:right;color:var(--leaf-deep)">${rupee(s.totalPaid)}</div></div>
+      <div class="barrow"><div class="bl">Pending verification</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(s.totalPending)}</div></div>`;
+    renderPayments(d.payments);
+  }catch(e){ toast(e.message); }
+}
+function renderPayments(payments){
+  let html='<tr><th>Date</th><th>Amount</th><th>Txn ID</th><th>Payout UPI</th><th>Status</th><th>Action</th></tr>';
+  html += (payments && payments.length) ? payments.map(p=>{
+    const d=new Date(p.createdAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const badge = p.status==='verified'?'<span class="sbadge s-delivered">Verified</span>': p.status==='rejected'?'<span class="sbadge s-cancelled">Rejected</span>':'<span class="sbadge s-out_for_delivery">Pending</span>';
+    const action = p.status==='pending'
+      ? `<button class="btn sm" onclick="verifyPay('${p.id}')">Verify</button> <button class="btn sm danger" onclick="rejectPay('${p.id}')">Reject</button>`
+      : (p.status==='rejected' && p.rejectReason ? `<span class="muted">${p.rejectReason}</span>` : '—');
+    return `<tr><td>${d}</td><td><b>${rupee(p.amount)}</b></td><td style="font-size:11px;word-break:break-all">${p.transactionId}</td><td style="font-size:11px">${p.upiId}</td><td>${badge}</td><td>${action}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted">No payments yet.</td></tr>';
+  $('#payTable').innerHTML = html;
+}
+async function saveDevUpi(){
+  const upiId=$('#devUpi').value.trim();
+  if(!upiId){ toast('Enter a UPI ID'); return; }
+  try{ await api.put('/dev/commission/upi',{ upiId }); toast('Payout UPI ID saved'); }catch(e){ toast(e.message); }
+}
+async function verifyPay(id){ try{ await api.patch('/dev/commission/payments/'+id+'/verify'); toast('Payment verified ✓'); loadSettlements(); refresh(); }catch(e){ toast(e.message); } }
+async function rejectPay(id){ const reason=prompt('Reason for rejecting this payment?'); if(reason===null) return; try{ await api.patch('/dev/commission/payments/'+id+'/reject',{ reason }); toast('Payment rejected'); loadSettlements(); }catch(e){ toast(e.message); } }
 
 if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
 </script>

@@ -108,10 +108,9 @@ app.use('/api/v1/settings', settingsRoutes);
 app.use(express.static(path.join(__dirname, '../../forco_amore')));
 app.use('/app', express.static(path.join(__dirname, '../../forco_amore')));
 
-
 // ── Health Check ──
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'forco_amore-api', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', service: 'forco-amore-api', timestamp: new Date().toISOString() });
 });
 
 // ── Error Handler ──

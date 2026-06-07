@@ -22,6 +22,7 @@ import adminRoutes from './routes/admin.routes.js';
 import kitchenRoutes from './routes/kitchen.routes.js';
 import deliveryRoutes from './routes/delivery.routes.js';
 import devRoutes from './routes/dev.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 
 import { authenticateSocket } from './middleware/auth.js';
 import { setupSocketHandlers } from './websocket/socketHandler.js';
@@ -95,6 +96,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/kitchen', kitchenRoutes);
 app.use('/api/v1/delivery', deliveryRoutes);
 app.use('/api/v1/dev', devRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 
 // ── Error Handler ──

@@ -40,10 +40,10 @@ const UPI_PAYEE_NAME = process.env.UPI_PAYEE_NAME || 'Cafeteria Green';
  * Build a standard UPI deep-link (works with GPay / PhonePe / Paytm / any UPI app).
  * Amount is PREFILLED and locked so the customer pays the exact order total.
  */
-function buildUpiUri(amount, note) {
+function buildUpiUri(amount, note, vpa, payeeName) {
     const params = new URLSearchParams({
-        pa: UPI_VPA,
-        pn: UPI_PAYEE_NAME,
+        pa: vpa || UPI_VPA,
+        pn: payeeName || UPI_PAYEE_NAME,
         am: Number(amount).toFixed(2),
         cu: 'INR',
         tn: note || 'Cafeteria Green order'
@@ -111,7 +111,12 @@ router.post('/payment-qr', async (req, res, next) => {
         const { items, dealCode } = req.body;
         const financials = await computeCartTotal(items, dealCode, req.user.id);
         const amount = financials.customerPays;
-        const upiUri = buildUpiUri(amount, `Cafeteria Green - ${req.user.name}`);
+
+        const upiIdSetting = await prisma.setting.findUnique({ where: { key: 'upi_id' } });
+        const upiId = upiIdSetting?.value || process.env.UPI_VPA || 'cafeteriagrean@paytm';
+        const upiPayeeName = process.env.UPI_PAYEE_NAME || 'Cafeteria Green';
+
+        const upiUri = buildUpiUri(amount, `Cafeteria Green - ${req.user.name}`, upiId, upiPayeeName);
         const qr = await QRCode.toDataURL(upiUri, { width: 320, margin: 1, color: { dark: '#1a2e22', light: '#ffffff' } });
 
         res.json({
@@ -119,8 +124,8 @@ router.post('/payment-qr', async (req, res, next) => {
             currency: 'INR',
             upiUri,
             qr,
-            payeeVpa: UPI_VPA,
-            payeeName: UPI_PAYEE_NAME,
+            payeeVpa: upiId,
+            payeeName: upiPayeeName,
             financials
         });
     } catch (err) {

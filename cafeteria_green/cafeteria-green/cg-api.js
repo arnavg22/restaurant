@@ -102,5 +102,30 @@
     payment_expired: 'Payment expired',
   };
 
-  global.CG = { CGApi, rupee, toast, getAuth, clearAuth, STATUS_LABEL, API_BASE };
+  global.CG = { CGApi, rupee, toast, getAuth, clearAuth, STATUS_LABEL, API_BASE, saveSettings, loadSettings };
+
+  async function loadSettings() {
+    const api = CGApi('admin');
+    try {
+      const settings = await api.get('/admin/settings');
+      document.querySelector('#upiId').value = settings.upi_id || '';
+    } catch (e) {
+      toast(e.message);
+    }
+  }
+
+  async function saveSettings() {
+    const api = CGApi('admin');
+    const upiId = document.querySelector('#upiId').value.trim();
+    if (!upiId) {
+      toast('Please enter a UPI ID.');
+      return;
+    }
+    try {
+      await api.put('/admin/settings', { upi_id: upiId });
+      toast('Settings saved successfully!');
+    } catch (e) {
+      toast(e.message);
+    }
+  }
 })(window);

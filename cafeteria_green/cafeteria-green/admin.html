@@ -108,6 +108,7 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
       <button data-view="staff">🛵 Delivery Staff</button>
       <button data-view="share">💸 Developer Share</button>
       <button data-view="dash">📊 Dashboard</button>
+      <button data-view="settings">⚙️ Settings</button>
     </nav>
     <div class="sb-foot"><div class="clock" id="clock">--:--:--</div><div class="role" id="who">Counter Staff</div><button class="logout" onclick="logout()">Log out</button></div>
   </aside>
@@ -145,14 +146,37 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
         <div id="staffList"></div>
       </div>
       <div class="view" id="view-share">
+        <div class="card" style="margin-bottom:16px">
+          <div class="section-head"><div><h3 style="margin-bottom:4px">Commission owed to platform</h3>
+            <div class="sub" id="commDevUpi">Developer UPI: —</div></div>
+            <div style="text-align:right"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">Outstanding</div>
+              <div style="font-family:'Bricolage Grotesque';font-size:26px;font-weight:800;color:var(--bean)" id="commOutstanding">₹0</div></div></div>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">
+            <div class="field" style="margin:0"><label>Amount to pay (₹)</label><input id="payAmount" type="number" min="1" placeholder="e.g. 500" style="width:160px"></div>
+            <button class="btn" onclick="openPayModal()">Generate QR &amp; pay</button>
+            <div class="muted" style="font-size:12px">Max payable now: <b id="commAvailable">₹0</b></div>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Developer share — 15% of menu price</h3>
           <div class="muted" style="font-size:13px">The platform / developer earns <b>15%</b> of every item's listed price; the restaurant keeps the remaining <b>85%</b>. This applies to each item below.</div></div>
         <div id="shareWrap"></div>
         <div class="section-head" style="margin:24px 0 12px"><div><h3>Order-wise developer share</h3><div class="sub" style="margin:0">Every order's split, for transparency · newest first</div></div>
           <button class="btn sm dark" onclick="exportShareCSV()">⬇ Export CSV</button></div>
         <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="shareLog"></table></div>
+        <div class="section-head" style="margin:24px 0 12px"><div><h3>Commission payment history</h3><div class="sub" style="margin:0">Your payments to the platform · newest first</div></div></div>
+        <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="commPayLog"></table></div>
       </div>
       <div class="view" id="view-dash"><div class="dash-grid" id="dashKpis"></div><div class="card" id="dashOutstanding"></div></div>
+      <div class="view" id="view-settings">
+        <div class="card" style="max-width: 640px;">
+          <h3 style="margin-bottom: 10px;">Payment Settings</h3>
+          <div class="field">
+            <label>UPI ID for accepting payments</label>
+            <input id="upiId" placeholder="e.g. restaurant@upi">
+          </div>
+          <button class="btn" onclick="CG.saveSettings()">Save Settings</button>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -164,6 +188,16 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
     <div id="veRows"></div>
     <button class="btn sm soft" onclick="veAdd()" style="margin-bottom:16px">+ Add option</button>
     <div style="display:flex;gap:10px"><button class="btn ghost" style="flex:1" onclick="closeVarEditor()">Cancel</button><button class="btn" style="flex:1" onclick="saveVariants()">Save options</button></div>
+  </div>
+</div>
+
+<div class="vmodal-bg" id="payModal">
+  <div class="vmodal-card">
+    <h3 style="margin-bottom:4px">Pay platform commission</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:14px">Scan the QR with any UPI app to pay the developer, then paste the transaction ID below to record it for verification.</div>
+    <div id="payQrBox" style="text-align:center;margin-bottom:14px"></div>
+    <div class="field"><label>UPI Transaction ID *</label><input id="commTxnId" placeholder="e.g. 4198XXXXXXXX"></div>
+    <div style="display:flex;gap:10px"><button class="btn ghost" style="flex:1" onclick="closePayModal()">Cancel</button><button class="btn" style="flex:1" id="commSubmitBtn" onclick="submitCommissionPayment()">Submit payment</button></div>
   </div>
 </div>
 
@@ -401,6 +435,7 @@ async function loadShare(){
     $('#shareWrap').innerHTML = html;
   }catch(e){ $('#shareWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
   loadShareLog();
+  loadCommission();
 }
 let SHARE_ORDERS=[];
 async function loadShareLog(){
@@ -428,6 +463,55 @@ function exportShareCSV(){
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='developer-share-log.csv'; a.click(); URL.revokeObjectURL(url); toast('CSV exported');
+}
+
+/* ---------- COMMISSION (pay platform / developer) ---------- */
+let commQrAmount=0;
+async function loadCommission(){
+  try{
+    const d = await api.get('/admin/commission');
+    const s = d.summary;
+    $('#commDevUpi').textContent = 'Developer UPI: ' + (d.devUpi || 'not set by developer yet');
+    $('#commOutstanding').textContent = rupee(s.outstandingCommission);
+    $('#commAvailable').textContent = rupee(s.availableToPay);
+    renderCommPayLog(d.payments);
+  }catch(e){ /* ignore transient */ }
+}
+function renderCommPayLog(payments){
+  let html='<tr><th>Date</th><th>Amount</th><th>Txn ID</th><th>Payout UPI</th><th>Status</th><th>Note</th></tr>';
+  html += (payments && payments.length) ? payments.map(p=>{
+    const d=new Date(p.createdAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    const badge = p.status==='verified'?'<span class="sbadge s-delivered">Verified</span>': p.status==='rejected'?'<span class="sbadge s-cancelled">Rejected</span>':'<span class="sbadge s-out_for_delivery">Pending</span>';
+    const note = (p.status==='rejected' && p.rejectReason) ? p.rejectReason : (p.note || '—');
+    return `<tr><td>${d}</td><td><b>${rupee(p.amount)}</b></td><td style="font-size:11px;word-break:break-all">${p.transactionId}</td><td style="font-size:11px">${p.upiId}</td><td>${badge}</td><td class="muted">${note}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted" style="padding:14px">No payments yet.</td></tr>';
+  $('#commPayLog').innerHTML = html;
+}
+async function openPayModal(){
+  const amount = parseFloat($('#payAmount').value);
+  if(!amount || amount<=0){ toast('Enter an amount to pay'); return; }
+  try{
+    const qr = await api.post('/admin/commission/payment-qr', { amount });
+    commQrAmount = qr.amount;
+    $('#payQrBox').innerHTML = `<img src="${qr.qr}" alt="UPI QR" style="width:220px;height:220px">
+      <div style="font-family:'Bricolage Grotesque';font-size:22px;font-weight:800">${rupee(qr.amount)}</div>
+      <div class="muted" style="font-size:12px;margin-bottom:10px">Pay to <b>${qr.payeeVpa}</b></div>
+      <a class="btn soft" href="${qr.upiUri}">Open in UPI app</a>`;
+    $('#commTxnId').value='';
+    $('#payModal').classList.add('show');
+  }catch(e){ toast(e.message); }
+}
+function closePayModal(){ $('#payModal').classList.remove('show'); }
+async function submitCommissionPayment(){
+  const transactionId=$('#commTxnId').value.trim();
+  if(!transactionId){ toast('Enter the UPI transaction ID'); return; }
+  const btn=$('#commSubmitBtn'); btn.disabled=true;
+  try{
+    await api.post('/admin/commission/payments', { amount: commQrAmount, transactionId });
+    toast('Payment submitted for verification');
+    closePayModal(); $('#payAmount').value=''; loadCommission();
+  }catch(e){ toast(e.message); }
+  finally{ btn.disabled=false; }
 }
 
 /* ---------- DASHBOARD ---------- */

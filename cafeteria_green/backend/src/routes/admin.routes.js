@@ -3,15 +3,33 @@
 // ============================================================
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import QRCode from 'qrcode';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { transitionOrderStatus, cancelOrder } from '../services/orderService.js';
-import { getAdminDashboard } from '../services/revenueService.js';
+import { getAdminDashboard, getOutstandingCommission, getDevUpi, createCommissionPayment, listCommissionPayments } from '../services/revenueService.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { ROLES } from '../config/constants.js';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Payee label shown inside the UPI app when the restaurant pays the platform.
+const PLATFORM_PAYEE_NAME = process.env.PLATFORM_PAYEE_NAME || 'Cafeteria Green Platform';
+const money = (v) => parseFloat(parseFloat(v || 0).toFixed(2));
+
+// Build a standard UPI deep-link with the amount prefilled (same scheme the
+// customer→restaurant flow uses).
+function buildUpiUri(amount, note, vpa, payeeName) {
+    const params = new URLSearchParams({
+        pa: vpa,
+        pn: payeeName || PLATFORM_PAYEE_NAME,
+        am: Number(amount).toFixed(2),
+        cu: 'INR',
+        tn: note || 'Commission settlement'
+    });
+    return `upi://pay?${params.toString()}`;
+}
 
 // All routes require admin authentication
 router.use(authenticate, authorize('admin'));
@@ -28,6 +46,97 @@ router.get('/dashboard', async (req, res, next) => {
         next(err);
     }
 });
+
+// ──────────────────────────────────────────────
+// COMMISSION PAYMENTS (restaurant → developer)
+// ──────────────────────────────────────────────
+
+// ── GET /admin/commission — outstanding owed + developer UPI + payment history ──
+router.get('/commission', async (req, res, next) => {
+    try {
+        const [outstanding, devUpi, payments] = await Promise.all([
+            getOutstandingCommission(),
+            getDevUpi(),
+            listCommissionPayments()
+        ]);
+        res.json({ summary: outstanding.summary, devUpi, payments });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── POST /admin/commission/payment-qr — generate a UPI QR to pay the developer ──
+router.post('/commission/payment-qr', async (req, res, next) => {
+    try {
+        const amount = money(req.body.amount);
+        if (!(amount > 0)) {
+            throw new AppError('Enter a valid amount greater than zero', 400, 'VALIDATION_ERROR');
+        }
+
+        const devUpi = await getDevUpi();
+        if (!devUpi) {
+            throw new AppError('The developer has not configured a payout UPI ID yet', 400, 'NO_DEV_UPI');
+        }
+
+        const { summary } = await getOutstandingCommission();
+        if (amount > summary.availableToPay + 0.001) {
+            throw new AppError(`Amount cannot exceed the outstanding payable (₹${summary.availableToPay})`, 400, 'AMOUNT_TOO_HIGH');
+        }
+
+        const upiUri = buildUpiUri(amount, 'Commission settlement', devUpi, PLATFORM_PAYEE_NAME);
+        const qr = await QRCode.toDataURL(upiUri, { width: 320, margin: 1, color: { dark: '#1a2e22', light: '#ffffff' } });
+
+        res.json({ amount, currency: 'INR', upiUri, qr, payeeVpa: devUpi, payeeName: PLATFORM_PAYEE_NAME });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── POST /admin/commission/payments — record a payment for developer verification ──
+router.post('/commission/payments', async (req, res, next) => {
+    try {
+        const { amount, transactionId, note } = req.body;
+        const payment = await createCommissionPayment({ amount, transactionId, note });
+        res.status(201).json({ message: 'Payment submitted for verification', payment });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ──────────────────────────────────────────────
+// SETTINGS
+// ──────────────────────────────────────────────
+
+router.get('/settings', async (req, res, next) => {
+    try {
+        const upiIdSetting = await prisma.setting.findUnique({
+            where: { key: 'upi_id' },
+        });
+        res.json({ upi_id: upiIdSetting?.value || '' });
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.put('/settings', async (req, res, next) => {
+    try {
+        const { upi_id } = req.body;
+        if (typeof upi_id !== 'string') {
+            throw new AppError('Invalid UPI ID format', 400, 'VALIDATION_ERROR');
+        }
+
+        await prisma.setting.upsert({
+            where: { key: 'upi_id' },
+            update: { value: upi_id },
+            create: { key: 'upi_id', value: upi_id },
+        });
+
+        res.json({ message: 'Settings updated successfully' });
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 // ──────────────────────────────────────────────
 // DELIVERY PERSONNEL

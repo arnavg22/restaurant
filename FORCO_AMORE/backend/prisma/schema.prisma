@@ -340,3 +340,30 @@ model Setting {
   @@map("settings")
 }
 
+
+// ─────────────────────────────────────────────
+// COMMISSION PAYMENTS (restaurant → developer/platform)
+// The restaurant pays down its outstanding 15% commission to the developer.
+// Mirrors the customer→restaurant UPI flow: restaurant pays via the developer's
+// UPI, submits the transaction ID, developer verifies, outstanding is reduced.
+// ─────────────────────────────────────────────
+enum CommissionPaymentStatus {
+  pending
+  verified
+  rejected
+}
+
+model CommissionPayment {
+  id            String                  @id @default(uuid())
+  amount        Decimal
+  upiId         String                  @map("upi_id")          // developer UPI captured at payment time
+  transactionId String                  @map("transaction_id")  // UPI reference supplied by the restaurant
+  note          String?
+  status        CommissionPaymentStatus @default(pending)
+  rejectReason  String?                 @map("reject_reason")
+  verifiedAt    DateTime?               @map("verified_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  @@map("commission_payments")
+}
