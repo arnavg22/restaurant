@@ -37,10 +37,9 @@ async function main() {
     }
 
     // ── 2. Menu items from JSON ──
-    // Paths are relative to the monorepo project root (one level above backend/)
-    const projectRoot = path.resolve(__dirname, '../../');
-    const barMenu = JSON.parse(readFileSync(path.join(projectRoot, 'barmenu.json'), 'utf-8'));
-    const foodMenu = JSON.parse(readFileSync(path.join(projectRoot, 'foodmenu.json'), 'utf-8'));
+    // Menu files are in the backend directory (copied into Docker image)
+    const barMenu = JSON.parse(readFileSync(path.join(__dirname, '../barmenu.json'), 'utf-8'));
+    const foodMenu = JSON.parse(readFileSync(path.join(__dirname, '../foodmenu.json'), 'utf-8'));
     const allItems = [...foodMenu, ...barMenu];
 
     // Clear existing data to avoid FK conflicts on re-seed

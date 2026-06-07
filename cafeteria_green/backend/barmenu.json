@@ -1,0 +1,651 @@
+[
+  {
+    "name": "Sula",
+    "price": 349,
+    "category": "Domestic Red Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 349 },
+      { "name": "Bottle", "price": 1499 }
+    ]
+  },
+  {
+    "name": "Fratelli",
+    "price": 399,
+    "category": "Domestic Red Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 399 },
+      { "name": "Bottle", "price": 1699 }
+    ]
+  },
+  {
+    "name": "Sula",
+    "price": 349,
+    "category": "Domestic White Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 349 },
+      { "name": "Bottle", "price": 1499 }
+    ]
+  },
+  {
+    "name": "Fratelli",
+    "price": 399,
+    "category": "Domestic White Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 399 },
+      { "name": "Bottle", "price": 1699 }
+    ]
+  },
+  {
+    "name": "Sula",
+    "price": 349,
+    "category": "Domestic Rose Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 349 },
+      { "name": "Bottle", "price": 1499 }
+    ]
+  },
+  {
+    "name": "Matus",
+    "price": 399,
+    "category": "Domestic Rose Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 399 },
+      { "name": "Bottle", "price": 1699 }
+    ]
+  },
+  {
+    "name": "Sula Seco",
+    "price": 399,
+    "category": "Domestic Sparkling Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 399 },
+      { "name": "Bottle", "price": 1699 }
+    ]
+  },
+  {
+    "name": "Jacobs Creek Siraj",
+    "price": 599,
+    "category": "Imported Red Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 599 },
+      { "name": "Bottle", "price": 2399 }
+    ]
+  },
+  {
+    "name": "Cosecha",
+    "price": 549,
+    "category": "Imported Red Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 549 },
+      { "name": "Bottle", "price": 2199 }
+    ]
+  },
+  {
+    "name": "Tara Paca",
+    "price": 599,
+    "category": "Imported Red Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 599 },
+      { "name": "Bottle", "price": 2399 }
+    ]
+  },
+  {
+    "name": "Jacobs Creek Siraj",
+    "price": 599,
+    "category": "Imported White Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 599 },
+      { "name": "Bottle", "price": 2399 }
+    ]
+  },
+  {
+    "name": "Cosecha",
+    "price": 549,
+    "category": "Imported White Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 549 },
+      { "name": "Bottle", "price": 2199 }
+    ]
+  },
+  {
+    "name": "Tara Paca",
+    "price": 599,
+    "category": "Imported White Wine",
+    "section": "Bar",
+    "variants": [
+      { "name": "Glass", "price": 599 },
+      { "name": "Bottle", "price": 2399 }
+    ]
+  },
+  {
+    "name": "Kingfisher Premium",
+    "price": 269,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 269 },
+      { "name": "Bucket", "price": 1199 }
+    ]
+  },
+  {
+    "name": "Kingfisher Ultra",
+    "price": 289,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 289 },
+      { "name": "Bucket", "price": 1249 }
+    ]
+  },
+  {
+    "name": "Kingfisher Ultra Max",
+    "price": 289,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 289 },
+      { "name": "Bucket", "price": 1249 }
+    ]
+  },
+  {
+    "name": "Corona",
+    "price": 329,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 329 },
+      { "name": "Bucket", "price": 1399 }
+    ]
+  },
+  {
+    "name": "Hoegarden",
+    "price": 329,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 329 },
+      { "name": "Bucket", "price": 1399 }
+    ]
+  },
+  {
+    "name": "Budweiser Light",
+    "price": 269,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 269 },
+      { "name": "Bucket", "price": 1199 }
+    ]
+  },
+  {
+    "name": "Budweiser Magnum",
+    "price": 299,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 299 },
+      { "name": "Bucket", "price": 1299 }
+    ]
+  },
+  {
+    "name": "Carlsberg Smooth",
+    "price": 269,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 269 },
+      { "name": "Bucket", "price": 1199 }
+    ]
+  },
+  {
+    "name": "Tuborg Ice",
+    "price": 279,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 279 },
+      { "name": "Bucket", "price": 1249 }
+    ]
+  },
+  {
+    "name": "Tuborg",
+    "price": 249,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 249 },
+      { "name": "Bucket", "price": 1099 }
+    ]
+  },
+  {
+    "name": "Breezer / Bacardi",
+    "price": 299,
+    "category": "Pint Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "Pint", "price": 299 },
+      { "name": "Bucket", "price": 1299 }
+    ]
+  },
+  {
+    "name": "Kingfisher Premium",
+    "price": 249,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 249 },
+      { "name": "1.5 L", "price": 1099 }
+    ]
+  },
+  {
+    "name": "Kingfisher Ultra",
+    "price": 279,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 279 },
+      { "name": "1.5 L", "price": 1299 }
+    ]
+  },
+  {
+    "name": "Kingfisher Ultra Max",
+    "price": 279,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 279 },
+      { "name": "1.5 L", "price": 1299 }
+    ]
+  },
+  {
+    "name": "Budweiser Light",
+    "price": 249,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 249 },
+      { "name": "1.5 L", "price": 1099 }
+    ]
+  },
+  {
+    "name": "Budweiser Magnum",
+    "price": 279,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 279 },
+      { "name": "1.5 L", "price": 1299 }
+    ]
+  },
+  {
+    "name": "Hoegaarden",
+    "price": 299,
+    "category": "Drought Beer",
+    "section": "Bar",
+    "variants": [
+      { "name": "330ml", "price": 299 },
+      { "name": "1.5 L", "price": 1399 }
+    ]
+  },
+  {
+    "name": "Bailey's",
+    "price": 399,
+    "category": "Shots",
+    "section": "Bar"
+  },
+  {
+    "name": "Jagermister",
+    "price": 399,
+    "category": "Shots",
+    "section": "Bar"
+  },
+  {
+    "name": "Jager Bomb",
+    "price": 499,
+    "category": "Shots",
+    "section": "Bar"
+  },
+  {
+    "name": "Soul Mark",
+    "description": "Kafir Lime, Yazu, Mint, Orange Slice, Top up Light Beer",
+    "price": 349,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Shandy",
+    "description": "Lime Chunks, Ginger Crush, Mint, Top up Beer",
+    "price": 349,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Mimosa",
+    "description": "Orange Juice, Top up Sparkling Wine",
+    "price": 399,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Belline",
+    "description": "Peach Puree, Top up Sparkling Wine",
+    "price": 399,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Wine Sangria",
+    "description": "Red Wine, Apple Juice, Orange Juice, Elderflower, Lime Juice and Chunks",
+    "price": 399,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "White Wine Sangria",
+    "description": "White Wine, Apple Juice, Orange Juice, Elderflower, Lime Juice and Chunks",
+    "price": 399,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Love Birds",
+    "description": "Watermelon, Sangria Mix, Cardamom, Popcorn, FLower",
+    "price": 399,
+    "category": "Cocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Bull Energy Drink",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Bull Sugarfree",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Bull Yellow Edition",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Bull Red Edition",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Bar"
+  },
+  {
+    "name": "Red Bull Twist",
+    "price": 200,
+    "category": "Energy Zone",
+    "section": "Bar"
+  },
+  {
+    "name": "Mix Juice",
+    "price": 109,
+    "category": "Juices",
+    "section": "Bar"
+  },
+  {
+    "name": "Pineapple",
+    "price": 109,
+    "category": "Juices",
+    "section": "Bar"
+  },
+  {
+    "name": "Guava",
+    "price": 109,
+    "category": "Juices",
+    "section": "Bar"
+  },
+  {
+    "name": "Cranberry",
+    "price": 109,
+    "category": "Juices",
+    "section": "Bar"
+  },
+  {
+    "name": "Green Smash",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Spicy Mango",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Orange Cooler",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Chilli Guava",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Berry Colada",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Mango Masala",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Electric Screwdriver",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Peach Ice Tea",
+    "price": 119,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Lemon Ice Tea",
+    "price": 119,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Litchi Rose",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Blueberry Mint",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Pina Colada",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Watermelon Mint",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Virgin Mojito",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Orange Mint",
+    "price": 129,
+    "category": "Mojitos / Mocktails",
+    "section": "Bar"
+  },
+  {
+    "name": "Tea",
+    "price": 39,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Black Tea",
+    "price": 39,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Black Coffee",
+    "price": 49,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Regular Coffee",
+    "price": 59,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Hot Chocolate",
+    "price": 119,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Jasmine Tea",
+    "price": 69,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Green Tea",
+    "price": 69,
+    "category": "Hot Beverages",
+    "section": "Bar"
+  },
+  {
+    "name": "Classic Cold Coffee",
+    "price": 119,
+    "category": "Cold Coffee",
+    "section": "Bar"
+  },
+  {
+    "name": "Irish Cold Coffee",
+    "price": 129,
+    "category": "Cold Coffee",
+    "section": "Bar"
+  },
+  {
+    "name": "Caramel Cold Coffee",
+    "price": 129,
+    "category": "Cold Coffee",
+    "section": "Bar"
+  },
+  {
+    "name": "Hazel Nut Cold Coffee",
+    "price": 129,
+    "category": "Cold Coffee",
+    "section": "Bar"
+  },
+  {
+    "name": "Banana Cheese Cake Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Mango Cheese Cake Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Oreo Cheese Cake Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Kitkat Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Strawberry Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Blueberry Cheese Cake Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Vanilla Shake",
+    "price": 139,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Nutella Shake",
+    "price": 159,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Cafeteria Brownie Shake",
+    "price": 159,
+    "category": "Shakes",
+    "section": "Bar"
+  },
+  {
+    "name": "Mix Berry Smoothy",
+    "price": 189,
+    "category": "Smoothies",
+    "section": "Bar"
+  },
+  {
+    "name": "Peanut Butter Museli",
+    "price": 189,
+    "category": "Smoothies",
+    "section": "Bar"
+  },
+  {
+    "name": "Banana Honey",
+    "price": 189,
+    "category": "Smoothies",
+    "section": "Bar"
+  }
+]

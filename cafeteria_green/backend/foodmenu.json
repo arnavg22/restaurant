@@ -1,0 +1,1066 @@
+[
+  {
+    "name": "Sweet Corn Soup",
+    "price": 99,
+    "category": "Soup Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Manchow Soup",
+    "price": 99,
+    "category": "Soup Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Hot & Sour Soup",
+    "price": 99,
+    "category": "Soup Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Lemon Coriander",
+    "price": 99,
+    "category": "Soup Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Sweet Corn",
+    "price": 139,
+    "category": "Soup Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Manchow",
+    "price": 139,
+    "category": "Soup Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Hot & Sour",
+    "price": 139,
+    "category": "Soup Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Lemon Coriander",
+    "price": 139,
+    "category": "Soup Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Thai Spring Roll",
+    "price": 139,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chilli Potato",
+    "price": 159,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Honey Chilli Potato",
+    "price": 159,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Dry Manchurian",
+    "price": 159,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Crispy Corn",
+    "price": 179,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chilli Mushroom",
+    "price": 179,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafeteria Chilli Paneer",
+    "price": 209,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Corn Tikki",
+    "price": 169,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Dahi Ke Sholey",
+    "price": 199,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Dahi Ke Kebab",
+    "price": 229,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Beetroot Ki Tikki",
+    "price": 169,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Papdi Paneer",
+    "price": 169,
+    "category": "Starters Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafetria Chilli Chicken",
+    "price": 299,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "KFC Chicken",
+    "price": 329,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "Lemon Chicken",
+    "price": 299,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken - 65",
+    "price": 299,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "Drums Of Heaven",
+    "price": 299,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Lollipop",
+    "price": 299,
+    "category": "Non Veg Starters",
+    "section": "Food"
+  },
+  {
+    "name": "Chilli Mushroom Gravy",
+    "price": 199,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Magic Manchurian Gravy",
+    "price": 179,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Fried Rice",
+    "price": 149,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Singapuri Fried Rice",
+    "price": 149,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Burn Garlic Fried Rice",
+    "price": 149,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Hakka Noodles",
+    "price": 149,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Singapuri Noodles",
+    "price": 149,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Burn Garlic Noodles",
+    "price": 159,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chilli Garlic Noodles",
+    "price": 159,
+    "category": "Chinese Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chilli Chicken Gravy",
+    "price": 319,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Manchurian Gravy",
+    "price": 289,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Fried Rice",
+    "price": 179,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Singapuri Chicken Fried Rice",
+    "price": 179,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Fried Rice",
+    "price": 169,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Hakka Noodles",
+    "price": 179,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Singapuri Noodles",
+    "price": 179,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Noodles",
+    "price": 169,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Chilli Garlic Noodles",
+    "price": 179,
+    "category": "Chinese Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Margherita Pizza",
+    "price": 199,
+    "category": "Pizza Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Farm Fresh Pizza",
+    "price": 239,
+    "category": "Pizza Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Italian Delite Pizza",
+    "price": 249,
+    "category": "Pizza Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Tikka Pizza",
+    "price": 279,
+    "category": "Pizza Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Corn Mushroom Pizza",
+    "price": 279,
+    "category": "Pizza Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Tikka Pizza",
+    "price": 329,
+    "category": "Pizza Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Butter Chicken Pizza",
+    "price": 329,
+    "category": "Pizza Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Arrabbiata Pasta (Red Sauce)",
+    "price": 199,
+    "category": "Pasta Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Alfredo Pasta (White Sauce)",
+    "price": 209,
+    "category": "Pasta Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Pink Sauce Pasta",
+    "price": 219,
+    "category": "Pasta Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Arrabbiata Pasta",
+    "price": 269,
+    "category": "Pasta Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Alfredo Pasta",
+    "price": 289,
+    "category": "Pasta Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Pink Sauce Pasta",
+    "price": 299,
+    "category": "Pasta Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Cold Sandwich",
+    "price": 69,
+    "category": "Sandwich Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Grilled Sandwich",
+    "price": 99,
+    "category": "Sandwich Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Grilled Sandwich",
+    "price": 139,
+    "category": "Sandwich Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafeteria Cheese Grilled Sandwich",
+    "price": 119,
+    "category": "Sandwich Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafeteria Greens Spl. Sandwich",
+    "price": 199,
+    "category": "Sandwich Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Grilled Chicken Sandwich",
+    "price": 139,
+    "category": "Sandwich Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafeteria Chicken Cheese Sandwich",
+    "price": 159,
+    "category": "Sandwich Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Cafeteria Greens Spl. Sandwich",
+    "price": 229,
+    "category": "Sandwich Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Aloo Tikki Burger",
+    "price": 59,
+    "category": "Burger Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Cheese Grilled Burger",
+    "price": 79,
+    "category": "Burger Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Double Tikki With Extra Cheese Burger",
+    "price": 109,
+    "category": "Burger Veg",
+    "section": "Food"
+  },
+  {
+    "name": "French Fries Salted",
+    "price": 99,
+    "category": "Burger Veg",
+    "section": "Food"
+  },
+  {
+    "name": "French Fries Peri-Peri",
+    "price": 129,
+    "category": "Burger Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Tikki Burger",
+    "price": 99,
+    "category": "Burger Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Cheese Grilled Burger",
+    "price": 119,
+    "category": "Burger Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Double Tikki With Extra Cheese Burger",
+    "price": 159,
+    "category": "Burger Nonveg",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Makhani",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Tadka",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Bukhara",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Mix Vegetable",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Rajma Masala",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chana Masala",
+    "price": 189,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Soya Chap Masala",
+    "price": 209,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Mushroom Masala",
+    "price": 209,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Kadhai Paneer",
+    "price": 209,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Lababdar",
+    "price": 199,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Diwani Handi",
+    "price": 229,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Butter Masala",
+    "price": 209,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Shahi Paneer",
+    "price": 199,
+    "category": "Main Course Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Mini Thali",
+    "description": "Vegetable, Dal / Rajma / Chana, Rice, 2 Roti, Salad, Raita",
+    "price": 125,
+    "category": "Cafeteria Special Thali",
+    "section": "Food"
+  },
+  {
+    "name": "Deluxe Thali",
+    "description": "Paneer, Mix Veg, Dal Makhani, Rice, 3 Roti, Raita, Salad, Sweet, Papad",
+    "price": 179,
+    "category": "Cafeteria Special Thali",
+    "section": "Food"
+  },
+  {
+    "name": "Non Veg Thali",
+    "description": "Chicken Curry, Dal Makhani, Rice, 3 Roti, Raita, Salad, Sweet, Papad",
+    "price": 279,
+    "category": "Cafeteria Special Thali",
+    "section": "Food"
+  },
+  {
+    "name": "Vegetable Biryani",
+    "price": 179,
+    "category": "Biryani",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Biryani",
+    "price": 199,
+    "category": "Biryani",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Biryani",
+    "price": 269,
+    "category": "Biryani",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Curry",
+    "price": 319,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Kadhai Chicken",
+    "price": 319,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Butter Chicken",
+    "price": 319,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Butter Masala",
+    "price": 319,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Lababdar",
+    "price": 329,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Handi",
+    "price": 329,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Rara",
+    "price": 329,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Junglee Chicken",
+    "price": 399,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Rogan Josh",
+    "price": 399,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Murgh Makhani",
+    "price": 399,
+    "category": "Main Course Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Rajma-Rice",
+    "price": 119,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Chana-Rice",
+    "price": 119,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Dal Makhni-Rice",
+    "price": 119,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Makhni-Rice",
+    "price": 149,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Fried Rice & Manchurian",
+    "price": 179,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Fried Rice & Chilli Paneer",
+    "price": 199,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Noodles & Manchurian",
+    "price": 179,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Noodle & Chilli Paneer",
+    "price": 199,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Curry & Rice",
+    "price": 199,
+    "category": "Combo",
+    "section": "Food"
+  },
+  {
+    "name": "Brownie With Chocolate Syrup",
+    "price": 99,
+    "category": "Dessert",
+    "section": "Food"
+  },
+  {
+    "name": "Brownie With Ice Cream",
+    "price": 129,
+    "category": "Dessert",
+    "section": "Food"
+  },
+  {
+    "name": "Hot Gulab Jamun",
+    "price": 60,
+    "category": "Dessert",
+    "section": "Food"
+  },
+  {
+    "name": "Hot Gulab Jamun With Ice Cream",
+    "price": 119,
+    "category": "Dessert",
+    "section": "Food"
+  },
+  {
+    "name": "Ice Cream",
+    "price": 79,
+    "category": "Dessert",
+    "section": "Food",
+    "variants": [
+      { "name": "Vanilla", "price": 79 },
+      { "name": "Chocolate", "price": 89 },
+      { "name": "Strawberry", "price": 89 }
+    ]
+  },
+  {
+    "name": "Stemed Rice",
+    "price": 99,
+    "category": "Rice",
+    "section": "Food"
+  },
+  {
+    "name": "Jeera Rice",
+    "price": 119,
+    "category": "Rice",
+    "section": "Food"
+  },
+  {
+    "name": "Peas Pulao",
+    "price": 129,
+    "category": "Rice",
+    "section": "Food"
+  },
+  {
+    "name": "Vegetable Pulao",
+    "price": 149,
+    "category": "Rice",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoor Roti",
+    "price": 20,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoor Butter Roti",
+    "price": 25,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Laccha Prantha",
+    "price": 59,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Butter Naan",
+    "price": 69,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Missi Roti",
+    "price": 69,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Garlic Naan",
+    "price": 79,
+    "category": "Roti",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Curry-Rice",
+    "price": 199,
+    "category": "Non Vegetarian",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Fried Rice & Chicken Manchurian",
+    "price": 199,
+    "category": "Non Vegetarian",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Fried Rice & Chilli Chicken",
+    "price": 239,
+    "category": "Non Vegetarian",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Noodles & Chicken Manchurian",
+    "price": 209,
+    "category": "Non Vegetarian",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Noodles & Chilli Chicken",
+    "price": 239,
+    "category": "Non Vegetarian",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoori Paneer Tikka",
+    "price": 279,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoori Soya Chap",
+    "price": 279,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Malai Soya Chap",
+    "price": 279,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoori Mushroom",
+    "price": 279,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Seekh Kebab",
+    "price": 179,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Hara Bhara Kebab",
+    "price": 179,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Corn Seekh",
+    "price": 179,
+    "category": "Tandoor Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Tikka",
+    "price": 349,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Malai Chicken Tikka",
+    "price": 399,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoori Chicken",
+    "price": 560,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Afghani Chicken",
+    "price": 560,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Seekh Kebab",
+    "price": 249,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Shammi Kebab",
+    "price": 349,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Pardai Chicken Seekh",
+    "price": 249,
+    "category": "Tandoor Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Mix Raita",
+    "price": 89,
+    "category": "Raita & Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Boondi Raita",
+    "price": 89,
+    "category": "Raita & Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Green Salad",
+    "price": 89,
+    "category": "Raita & Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Kimchi Salad",
+    "price": 99,
+    "category": "Raita & Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Asian Chicken Salad",
+    "price": 159,
+    "category": "Raita & Salad",
+    "section": "Food"
+  },
+  {
+    "name": "Aloo Parantha",
+    "price": 99,
+    "category": "Paratha",
+    "section": "Food"
+  },
+  {
+    "name": "Mix Parantha",
+    "price": 99,
+    "category": "Paratha",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Parantha",
+    "price": 119,
+    "category": "Paratha",
+    "section": "Food"
+  },
+  {
+    "name": "Egg Parantha",
+    "price": 99,
+    "category": "Paratha",
+    "section": "Food"
+  },
+  {
+    "name": "Bread Omelette",
+    "price": 79,
+    "category": "Breakfast",
+    "section": "Food"
+  },
+  {
+    "name": "Poha",
+    "price": 89,
+    "category": "Breakfast",
+    "section": "Food"
+  },
+  {
+    "name": "Maggi",
+    "price": 69,
+    "category": "Breakfast",
+    "section": "Food"
+  },
+  {
+    "name": "Chole Bhature",
+    "price": 99,
+    "category": "Breakfast",
+    "section": "Food"
+  },
+  {
+    "name": "Special Masala Tea",
+    "price": 39,
+    "category": "Tea,Coffe,Pakoda",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Pakoda",
+    "price": 129,
+    "category": "Tea,Coffe,Pakoda",
+    "section": "Food"
+  },
+  {
+    "name": "Paneer Pakoda",
+    "price": 169,
+    "category": "Tea,Coffe,Pakoda",
+    "section": "Food"
+  },
+  {
+    "name": "Steam Momos",
+    "price": 79,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Fried Momos",
+    "price": 99,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Kurkure Momos",
+    "price": 119,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Gravy Momos",
+    "price": 139,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Tandoori Momos",
+    "price": 139,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Veg Momos",
+    "price": 139,
+    "category": "Momos Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Steam Momos",
+    "price": 129,
+    "category": "Momos Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Fried Momos",
+    "price": 139,
+    "category": "Momos Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Kurkure Momos",
+    "price": 149,
+    "category": "Momos Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Gravy Momos",
+    "price": 169,
+    "category": "Momos Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Chicken Tandoori Momos",
+    "price": 139,
+    "category": "Momos Non Veg",
+    "section": "Food"
+  },
+  {
+    "name": "Red Bull Energy Drink",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Food"
+  },
+  {
+    "name": "Red Bull Sugarfree",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Food"
+  },
+  {
+    "name": "Red Bull Yellow Edition",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Food"
+  },
+  {
+    "name": "Red Bull Red Edition",
+    "price": 125,
+    "category": "Energy Zone",
+    "section": "Food"
+  }
+]
