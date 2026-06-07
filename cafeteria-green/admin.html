@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cafeteria Green — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;flex:0 0 250px;background:linear-gradient(180deg,var(--leaf-deep),oklch(0.40 0.10 152));color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sb-brand{padding:22px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.12)}
+.sb-brand .lm{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.sb-brand b{font-family:'Bricolage Grotesque';font-size:16px;display:block}
+.sb-brand small{font-size:11px;opacity:.8}
+.sb-nav{padding:14px 12px;flex:1}
+.sb-nav button{width:100%;display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;color:rgba(255,255,255,.85);font-weight:600;font-size:14px;margin-bottom:4px;text-align:left}
+.sb-nav button.sel{background:rgba(255,255,255,.16);color:#fff}
+.sb-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,.12);font-size:12px}
+.sb-foot .clock{font-family:'Bricolage Grotesque';font-size:20px;font-weight:700}
+.sb-foot .role{opacity:.8;margin-top:4px}
+.sb-foot .logout{margin-top:10px;color:#fff;background:rgba(255,255,255,.14);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;width:100%}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topstrip{background:var(--panel);border-bottom:1px solid var(--line);padding:16px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topstrip h2{font-size:20px}
+.stats{display:flex;gap:12px}
+.stat{background:var(--panel-2);border-radius:12px;padding:10px 16px;min-width:120px}
+.stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);font-weight:600}
+.stat .v{font-family:'Bricolage Grotesque';font-size:22px;font-weight:700;margin-top:2px}
+.stat.accent{background:var(--leaf-bg)} .stat.accent .v{color:var(--leaf-deep)}
+.stat.warn{background:oklch(0.96 0.05 75)} .stat.warn .v{color:var(--bean)}
+.content{padding:22px 26px 60px;flex:1}
+.view{display:none}.view.active{display:block}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.col{background:var(--panel-2);border-radius:14px;overflow:hidden;min-height:120px}
+.col-head{padding:11px 14px;color:#fff;font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center}
+.col-head .cnt{background:rgba(255,255,255,.3);border-radius:20px;padding:0 9px;font-size:12px}
+.col.verify .col-head{background:var(--amber);color:oklch(0.30 0.05 70)}
+.col.accepted .col-head{background:var(--leaf)}
+.col.preparing .col-head{background:var(--leaf-deep)}
+.col.ready .col-head{background:var(--blue)}
+.col.ofd .col-head{background:oklch(0.50 0.13 230)}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:10px}
+.ocard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.ocard.flash{animation:flashk 1.5s ease}
+@keyframes flashk{0%{box-shadow:0 0 0 3px var(--leaf);background:var(--leaf-bg)}100%{box-shadow:none}}
+.oc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.oc-id{font-family:'Bricolage Grotesque';font-weight:700;font-size:14px}
+.oc-time{font-size:11px;color:var(--ink-faint)}
+.oc-items{font-size:12.5px;color:var(--ink-soft);margin:6px 0;line-height:1.5}
+.oc-addr{font-size:12px;color:var(--ink-faint);background:var(--panel-2);border-radius:8px;padding:7px 9px;margin:6px 0}
+.oc-total{font-weight:700;font-size:14px}
+.txn{font-size:11.5px;background:oklch(0.96 0.04 75);color:var(--bean);border-radius:7px;padding:6px 9px;margin:6px 0;font-weight:600;word-break:break-all}
+.assigned{font-size:12px;color:var(--leaf-deep);font-weight:600;margin-top:6px}
+.coldot{font-size:12px;color:var(--ink-faint);text-align:center;padding:18px 6px}
+select.assign{width:100%;height:36px;border:1px solid var(--line);border-radius:9px;padding:0 8px;font-size:12.5px;margin:6px 0;background:var(--panel)}
+.row-actions{display:flex;gap:6px;margin-top:8px}
+.row-actions .btn{flex:1}
+/* menu manager */
+table.mm{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
+table.mm th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);text-align:left;padding:10px 14px;border-bottom:2px solid var(--line)}
+table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+.mm-price{width:90px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:13px}
+.switch{position:relative;width:44px;height:25px;display:inline-block}
+.switch input{display:none}.switch .sl{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s}
+.switch .sl::before{content:"";position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+.switch input:checked + .sl{background:var(--leaf)}.switch input:checked + .sl::before{transform:translateX(19px)}
+.addbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
+.addbar .field{margin:0}.addbar input{height:40px}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);font-weight:600}
+.kpi .v{font-family:'Bricolage Grotesque';font-size:26px;font-weight:800;margin-top:5px}
+@media(max-width:1200px){.board{grid-template-columns:repeat(2,1fr)}.stats{display:none}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
+    <h1>Admin Panel</h1><div class="role-tag">Cafeteria Green · Counter &amp; kitchen</div>
+    <div class="login-err" id="err"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" value="admin@cafeteriagrean.in"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
+    <button class="btn block" id="loginBtn" onclick="doLogin()">Log in</button>
+    <div class="login-hint">Demo: <b>admin@cafeteriagrean.in</b> · password <b>CafeGreen@2026</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="layout hidden" id="app">
+  <aside class="sidebar">
+    <div class="sb-brand"><div class="lm"><svg class="leaf-svg" viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div><div><b>Cafeteria Green</b><small>Admin Panel</small></div></div>
+    <nav class="sb-nav" id="nav">
+      <button data-view="live" class="sel">🟢 Live Orders</button>
+      <button data-view="menu">📋 Menu Manager</button>
+      <button data-view="dash">📊 Dashboard</button>
+    </nav>
+    <div class="sb-foot"><div class="clock" id="clock">--:--:--</div><div class="role" id="who">Counter Staff</div><button class="logout" onclick="logout()">Log out</button></div>
+  </aside>
+  <main class="main">
+    <div class="topstrip"><h2 id="title">Live Orders</h2>
+      <div class="stats">
+        <div class="stat warn"><div class="l">To Verify</div><div class="v" id="sVerify">0</div></div>
+        <div class="stat"><div class="l">Active</div><div class="v" id="sActive">0</div></div>
+        <div class="stat accent"><div class="l">Revenue Today</div><div class="v" id="sRev">₹0</div></div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="view active" id="view-live">
+        <div class="board">
+          <div class="col verify"><div class="col-head">To Verify <span class="cnt" id="c-verify">0</span></div><div class="col-body" id="col-verify"></div></div>
+          <div class="col accepted"><div class="col-head">Accepted <span class="cnt" id="c-accepted">0</span></div><div class="col-body" id="col-accepted"></div></div>
+          <div class="col preparing"><div class="col-head">Preparing <span class="cnt" id="c-preparing">0</span></div><div class="col-body" id="col-preparing"></div></div>
+          <div class="col ready"><div class="col-head">Ready <span class="cnt" id="c-ready">0</span></div><div class="col-body" id="col-ready"></div></div>
+          <div class="col ofd"><div class="col-head">Out for Delivery <span class="cnt" id="c-ofd">0</span></div><div class="col-body" id="col-ofd"></div></div>
+        </div>
+      </div>
+      <div class="view" id="view-menu"><div class="addbar" id="addbar"></div><div id="mmWrap"></div></div>
+      <div class="view" id="view-dash"><div class="dash-grid" id="dashKpis"></div><div class="card" id="dashOutstanding"></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cg-api.js"></script>
+<script>
+const { CGApi, rupee, toast, STATUS_LABEL } = CG;
+const api = CGApi('admin');
+const $ = s=>document.querySelector(s);
+let ORDERS=[], DELIVERY_PERSONS=[], seen=new Set(), currentView='live', socket=null, pollTimer=null;
+
+function doLogin(){
+  const btn=$('#loginBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  api.login($('#email').value.trim(), $('#pass').value)
+    .then(()=>enterApp())
+    .catch(e=>{ const el=$('#err'); el.textContent=e.message; el.classList.add('show'); btn.disabled=false; btn.textContent='Log in'; });
+}
+function logout(){ if(socket)socket.disconnect(); clearInterval(pollTimer); api.logout(); location.reload(); }
+
+function enterApp(){
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#who').textContent = api.user?.name || 'Counter Staff';
+  setInterval(()=>{ $('#clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false}); },1000);
+  socket = api.connectSocket({ 'order:new': ()=>{ toast('New order received!'); refresh(); } });
+  loadDeliveryPersons();
+  refresh();
+  pollTimer=setInterval(refresh, 5000);
+}
+
+$('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return; currentView=b.dataset.view;
+  $('#nav').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+currentView).classList.add('active');
+  $('#title').textContent=b.textContent.trim().replace(/^\S+\s/,'');
+  if(currentView==='menu') loadMenuMgr();
+  if(currentView==='dash') loadDash();
+});
+
+async function loadDeliveryPersons(){ try{ DELIVERY_PERSONS = await api.get('/admin/delivery-persons'); }catch{ DELIVERY_PERSONS=[]; } }
+
+async function refresh(){
+  try{
+    const data = await api.get('/admin/orders?limit=100');
+    ORDERS = data.orders;
+    renderBoard();
+  }catch(e){ /* token expiry etc */ }
+}
+function elapsed(ts){ const m=Math.floor((Date.now()-new Date(ts))/60000); return m<1?'just now':m+' min ago'; }
+
+function renderBoard(){
+  const groups={ verify:[], accepted:[], preparing:[], ready:[], ofd:[] };
+  ORDERS.forEach(o=>{
+    if(o.status==='payment_verification_pending') groups.verify.push(o);
+    else if(o.status==='accepted') groups.accepted.push(o);
+    else if(o.status==='preparing') groups.preparing.push(o);
+    else if(o.status==='ready') groups.ready.push(o);
+    else if(o.status==='out_for_delivery') groups.ofd.push(o);
+  });
+  for(const [k,arr] of Object.entries(groups)){
+    $('#col-'+k).innerHTML = arr.length ? arr.map(o=>card(o,k)).join('') : '<div class="coldot">—</div>';
+    $('#c-'+k).textContent = arr.length;
+  }
+  $('#sVerify').textContent = groups.verify.length;
+  $('#sActive').textContent = groups.accepted.length+groups.preparing.length+groups.ready.length+groups.ofd.length;
+  const todayRev = ORDERS.filter(o=>o.payment.paidAt).reduce((s,o)=>s+o.financials.customerPays,0);
+  $('#sRev').textContent = rupee(todayRev);
+  seen = new Set(ORDERS.map(o=>o.id));
+}
+function itemsText(o){ return o.items.map(i=>`${i.quantity}× ${i.name}`).join(', '); }
+function card(o, col){
+  const flash = !seen.has(o.id)?'flash':'';
+  let mid='', actions='';
+  const addr = `<div class="oc-addr">📍 ${o.delivery.building} · ${o.delivery.floorSeat}<br>${o.delivery.name} · ${o.delivery.phone}</div>`;
+  if(col==='verify'){
+    mid = `<div class="txn">Txn ID: ${o.payment.transactionId||'—'}</div>` + addr;
+    actions = `<div class="row-actions"><button class="btn sm danger" onclick="cancelOrder('${o.id}')">Reject</button><button class="btn sm" onclick="confirmPay('${o.id}')">Confirm Payment</button></div>`;
+  } else if(col==='accepted'){
+    mid = addr;
+    actions = `<button class="btn sm block" onclick="act('${o.id}','prepare')">Start Preparing →</button>`;
+  } else if(col==='preparing'){
+    mid = addr;
+    actions = `<button class="btn sm block" onclick="act('${o.id}','ready')">Mark Ready →</button>`;
+  } else if(col==='ready'){
+    mid = addr;
+    if(o.assignedDelivery){ mid += `<div class="assigned">✓ Assigned to ${o.assignedDelivery.name}</div>`; }
+    const opts = DELIVERY_PERSONS.map(p=>`<option value="${p.id}">${p.name} (${p.activeOrders} active)</option>`).join('');
+    actions = `<select class="assign" id="asg-${o.id}">${opts||'<option>No delivery staff</option>'}</select>
+      <button class="btn sm block" onclick="assign('${o.id}')">${o.assignedDelivery?'Re-assign':'Assign delivery'}</button>`;
+  } else if(col==='ofd'){
+    mid = addr + (o.assignedDelivery?`<div class="assigned">🛵 ${o.assignedDelivery.name}</div>`:'');
+  }
+  return `<div class="ocard ${flash}"><div class="oc-top"><span class="oc-id">#${o.orderNumber}</span><span class="oc-time">${elapsed(o.timestamps.created)}</span></div>
+    <div class="oc-items">${itemsText(o)}</div>${mid}
+    <div class="oc-top"><span class="oc-total">${rupee(o.financials.customerPays)}</span><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]}</span></div>
+    ${actions}</div>`;
+}
+async function confirmPay(id){ try{ await api.patch('/admin/orders/'+id+'/confirm-payment'); toast('Payment verified ✓'); refresh(); }catch(e){ toast(e.message); } }
+async function act(id, action){ try{ await api.patch('/admin/orders/'+id+'/'+action); refresh(); }catch(e){ toast(e.message); } }
+async function assign(id){
+  const sel=$('#asg-'+id); const deliveryId=sel?sel.value:null;
+  if(!deliveryId){ toast('No delivery staff available'); return; }
+  try{ await api.patch('/admin/orders/'+id+'/assign-delivery',{deliveryId}); toast('Assigned'); loadDeliveryPersons(); refresh(); }catch(e){ toast(e.message); }
+}
+async function cancelOrder(id){
+  const reason = prompt('Reason for rejecting/cancelling this order?');
+  if(!reason) return;
+  try{ await api.patch('/admin/orders/'+id+'/cancel',{reason}); toast('Order cancelled'); refresh(); }catch(e){ toast(e.message); }
+}
+
+/* ---------- MENU MANAGER ---------- */
+async function loadMenuMgr(){
+  $('#addbar').innerHTML = `
+    <div class="field"><label>Name</label><input id="niName" placeholder="Dish name"></div>
+    <div class="field"><label>Category</label><input id="niCat" placeholder="e.g. Snacks"></div>
+    <div class="field"><label>Price ₹</label><input id="niPrice" type="number" style="width:90px"></div>
+    <button class="btn sm" onclick="addItem()">+ Add item</button>`;
+  try{
+    const items = await api.get('/menu/all');
+    const cats={}; items.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
+    let html='<table class="mm"><tr><th>Item</th><th>Price (₹)</th><th>Available</th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="3" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(it=>{
+        html += `<tr><td>${it.name}</td>
+          <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)"></td>
+          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td></tr>`;
+      });
+    });
+    html+='</table>'; $('#mmWrap').innerHTML=html;
+  }catch(e){ $('#mmWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function updatePrice(id,val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
+async function toggleAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); }catch(e){ toast(e.message); } }
+async function addItem(){
+  const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), price=parseFloat($('#niPrice').value);
+  if(!name||!category||!price){ toast('Fill name, category, price'); return; }
+  try{ await api.post('/menu',{name,category,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
+}
+
+/* ---------- DASHBOARD ---------- */
+async function loadDash(){
+  try{
+    const d = await api.get('/admin/dashboard');
+    $('#dashKpis').innerHTML = `
+      <div class="kpi"><div class="l">Orders Delivered Today</div><div class="v">${d.today.orders}</div></div>
+      <div class="kpi"><div class="l">Gross Revenue Today</div><div class="v" style="color:var(--leaf-deep)">${rupee(d.today.grossRevenue)}</div></div>
+      <div class="kpi"><div class="l">Restaurant Share Today</div><div class="v">${rupee(d.today.restaurantRevenue)}</div></div>
+      <div class="kpi"><div class="l">Owed to Platform</div><div class="v" style="color:var(--bean)">${rupee(d.outstandingCommission.outstandingCommission)}</div></div>`;
+    const od = d.outstandingDetails||[];
+    $('#dashOutstanding').innerHTML = `<h3 style="margin-bottom:12px">Unsettled delivered orders (${od.length})</h3>` +
+      (od.length? od.map(o=>`<div class="bill-row" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span>#${o.orderNumber} · ${o.customer.name}</span><span>${rupee(o.financials.customerPaid)} · platform ${rupee(o.financials.platformEarnings)}</span></div>`).join('') : '<div class="muted">No unsettled orders.</div>');
+  }catch(e){ $('#dashKpis').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+
+/* init */
+if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
+</script>
+</body>
+</html>

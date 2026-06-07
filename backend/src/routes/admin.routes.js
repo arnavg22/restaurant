@@ -29,6 +29,33 @@ router.get('/dashboard', async (req, res, next) => {
 });
 
 // ──────────────────────────────────────────────
+// DELIVERY PERSONNEL
+// ──────────────────────────────────────────────
+
+// ── GET /admin/delivery-persons — list active delivery accounts (to assign orders) ──
+router.get('/delivery-persons', async (req, res, next) => {
+    try {
+        const people = await prisma.user.findMany({
+            where: { role: 'delivery', isActive: true },
+            select: { id: true, name: true, phone: true },
+            orderBy: { name: 'asc' }
+        });
+
+        // Active (out_for_delivery) load per person
+        const active = await prisma.order.groupBy({
+            by: ['assignedDeliveryId'],
+            where: { status: { in: ['ready', 'out_for_delivery'] }, assignedDeliveryId: { not: null } },
+            _count: true
+        });
+        const loadMap = new Map(active.map(a => [a.assignedDeliveryId, a._count]));
+
+        res.json(people.map(p => ({ ...p, activeOrders: loadMap.get(p.id) || 0 })));
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ──────────────────────────────────────────────
 // ORDER MANAGEMENT
 // ──────────────────────────────────────────────
 
@@ -72,7 +99,8 @@ router.get('/orders', async (req, res, next) => {
                 include: {
                     items: true,
                     user: { select: { id: true, name: true, email: true, phone: true } },
-                    appliedDeal: { select: { id: true, title: true } }
+                    appliedDeal: { select: { id: true, title: true } },
+                    assignedDelivery: { select: { id: true, name: true, phone: true } }
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
@@ -117,6 +145,9 @@ router.get('/orders', async (req, res, next) => {
                     transactionId: o.transactionId,
                     paidAt: o.paidAt
                 },
+                assignedDelivery: o.assignedDelivery
+                    ? { id: o.assignedDelivery.id, name: o.assignedDelivery.name, phone: o.assignedDelivery.phone }
+                    : null,
                 timestamps: {
                     created: o.createdAt,
                     delivered: o.deliveredAt
@@ -209,6 +240,41 @@ router.patch('/orders/:id/status', async (req, res, next) => {
     }
 });
 
+// ── PATCH /admin/orders/:id/confirm-payment — Manually verify UPI payment ──
+// Admin checks the customer-supplied transaction ID against their UPI account,
+// then confirms. This records paidAt and moves the order to 'accepted' so it can proceed.
+router.patch('/orders/:id/confirm-payment', async (req, res, next) => {
+    try {
+        const existing = await prisma.order.findUnique({ where: { id: req.params.id } });
+        if (!existing) throw new AppError('Order not found', 404, 'NOT_FOUND');
+        if (existing.status !== 'payment_verification_pending') {
+            throw new AppError(`Payment for this order is already verified (status: ${existing.status})`, 400, 'ALREADY_VERIFIED');
+        }
+
+        // Stamp the payment as received, then advance the order
+        await prisma.order.update({ where: { id: req.params.id }, data: { paidAt: new Date() } });
+
+        const order = await transitionOrderStatus(req.params.id, {
+            newStatus: 'accepted',
+            changedBy: req.user.id,
+            changedByRole: ROLES.ADMIN,
+            notes: `Payment verified manually. Txn ID: ${existing.transactionId}`,
+            metadata: { transactionId: existing.transactionId, verifiedBy: req.user.name }
+        });
+
+        emitToCustomer(req, order.id, 'order:status_changed', {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            newStatus: 'accepted',
+            message: 'Payment verified! Your order has been accepted.'
+        });
+
+        res.json({ message: 'Payment verified and order accepted', order: { id: order.id, status: order.status } });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // ── PATCH /admin/orders/:id/accept — Accept order ──
 router.patch('/orders/:id/accept', async (req, res, next) => {
     try {
@@ -287,6 +353,66 @@ router.patch('/orders/:id/ready', async (req, res, next) => {
         }
 
         res.json({ message: 'Order ready for delivery', order: { id: order.id, status: order.status } });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PATCH /admin/orders/:id/assign-delivery — Assign order to a delivery person ──
+// Does not change the order status; it routes the order into that delivery person's
+// queue. The delivery person then picks it up (out_for_delivery) and delivers it.
+router.patch('/orders/:id/assign-delivery', async (req, res, next) => {
+    try {
+        const { deliveryId } = req.body;
+        if (!deliveryId) throw new AppError('A delivery person is required', 400, 'VALIDATION_ERROR');
+
+        const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+        if (!order) throw new AppError('Order not found', 404, 'NOT_FOUND');
+        if (!['accepted', 'preparing', 'ready'].includes(order.status)) {
+            throw new AppError(`Cannot assign delivery for an order that is '${order.status}'`, 400, 'INVALID_STATE');
+        }
+
+        const person = await prisma.user.findFirst({ where: { id: deliveryId, role: 'delivery', isActive: true } });
+        if (!person) throw new AppError('Delivery person not found', 404, 'NOT_FOUND');
+
+        const updated = await prisma.$transaction(async (tx) => {
+            const o = await tx.order.update({
+                where: { id: req.params.id },
+                data: { assignedDeliveryId: deliveryId }
+            });
+            await tx.orderLog.create({
+                data: {
+                    orderId: o.id,
+                    fromStatus: o.status,
+                    toStatus: o.status,
+                    changedBy: req.user.id,
+                    changedByRole: ROLES.ADMIN,
+                    notes: `Assigned to delivery person: ${person.name}`,
+                    metadata: { assignedDeliveryId: deliveryId, assignedDeliveryName: person.name }
+                }
+            });
+            return o;
+        });
+
+        // Notify the delivery feed + the customer
+        const io = req.app.get('io');
+        if (io) {
+            io.to('delivery_feed').emit('order:assigned', {
+                orderId: updated.id,
+                orderNumber: updated.orderNumber,
+                assignedTo: deliveryId,
+                building: updated.buildingName,
+                floorSeat: updated.floorSeat
+            });
+        }
+        emitToCustomer(req, updated.id, 'order:status_changed', {
+            orderId: updated.id,
+            orderNumber: updated.orderNumber,
+            newStatus: updated.status,
+            message: `${person.name} will deliver your order`
+        });
+
+        res.json({ message: `Order assigned to ${person.name}`, order: { id: updated.id, assignedDeliveryId: deliveryId } });
     } catch (err) {
         next(err);
     }

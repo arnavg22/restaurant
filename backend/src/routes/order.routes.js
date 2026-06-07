@@ -23,6 +23,7 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import QRCode from 'qrcode';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateDeliveryInfo } from '../services/orderService.js';
 import { calculateDealDiscount, calculateOrderFinancials } from '../services/orderService.js';
@@ -31,8 +32,95 @@ import { AppError } from '../middleware/errorHandler.js';
 const router = Router();
 const prisma = new PrismaClient();
 
+// UPI payee config (override in .env)
+const UPI_VPA = process.env.UPI_VPA || 'cafeteriagrean@paytm';
+const UPI_PAYEE_NAME = process.env.UPI_PAYEE_NAME || 'Cafeteria Green';
+
+/**
+ * Build a standard UPI deep-link (works with GPay / PhonePe / Paytm / any UPI app).
+ * Amount is PREFILLED and locked so the customer pays the exact order total.
+ */
+function buildUpiUri(amount, note) {
+    const params = new URLSearchParams({
+        pa: UPI_VPA,
+        pn: UPI_PAYEE_NAME,
+        am: Number(amount).toFixed(2),
+        cu: 'INR',
+        tn: note || 'Cafeteria Green order'
+    });
+    return `upi://pay?${params.toString()}`;
+}
+
+/**
+ * Recompute the order total from a cart (server-side price snapshot + optional deal).
+ * Shared by /preview, /payment-qr and POST / so the amount is always consistent.
+ */
+async function computeCartTotal(items, dealCode, userId) {
+    if (!items || items.length === 0) {
+        throw new AppError('Cart is empty', 400, 'EMPTY_CART');
+    }
+    const menuItemIds = items.map(i => i.menuItemId);
+    const menuItems = await prisma.menuItem.findMany({
+        where: { id: { in: menuItemIds }, isAvailable: true }
+    });
+    if (menuItems.length !== menuItemIds.length) {
+        const found = new Set(menuItems.map(m => m.id));
+        const missing = menuItemIds.filter(id => !found.has(id));
+        throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
+    }
+    const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
+    let subtotal = 0;
+    for (const item of items) subtotal += priceMap.get(item.menuItemId) * item.quantity;
+    subtotal = Math.round(subtotal * 100) / 100;
+
+    let discount = 0;
+    if (dealCode) {
+        const deal = await prisma.deal.findFirst({
+            where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
+        });
+        if (deal) discount = calculateDealDiscount(deal, subtotal, userId);
+    }
+    return calculateOrderFinancials(subtotal, discount);
+}
+
 // All routes require customer authentication
 router.use(authenticate, authorize('customer'));
+
+// ──────────────────────────────────────────────
+// PAYMENT QR (real UPI QR with prefilled amount)
+// ──────────────────────────────────────────────
+
+/**
+ * POST /orders/payment-qr
+ *
+ * Generates a REAL, scannable UPI QR code (data URL) with the order amount
+ * PREFILLED. The customer scans it with any UPI app, pays, then enters the
+ * resulting transaction ID when placing the order.
+ *
+ * Body: { items: [{menuItemId, quantity}], dealCode? }
+ * Returns: { amount, currency, upiUri, qr, payeeVpa, payeeName }
+ */
+router.post('/payment-qr', async (req, res, next) => {
+    try {
+        const { items, dealCode } = req.body;
+        const financials = await computeCartTotal(items, dealCode, req.user.id);
+        const amount = financials.customerPays;
+        const upiUri = buildUpiUri(amount, `Cafeteria Green - ${req.user.name}`);
+        const qr = await QRCode.toDataURL(upiUri, { width: 320, margin: 1, color: { dark: '#1a2e22', light: '#ffffff' } });
+
+        res.json({
+            amount,
+            currency: 'INR',
+            upiUri,
+            qr,
+            payeeVpa: UPI_VPA,
+            payeeName: UPI_PAYEE_NAME,
+            financials
+        });
+    } catch (err) {
+        next(err);
+    }
+});
 
 // ──────────────────────────────────────────────
 // DEALS
@@ -301,11 +389,15 @@ router.post('/', async (req, res, next) => {
         // ── 5. Calculate all financials ──
         const financials = calculateOrderFinancials(subtotal, discountAmount);
 
+        // ── 5b. Generate a human-friendly, unique order number ──
+        const orderNumber = await generateOrderNumber();
+
         // ── 6. Save everything in a transaction ──
         const order = await prisma.$transaction(async (tx) => {
             // Create the order
             const newOrder = await tx.order.create({
                 data: {
+                    orderNumber,
                     userId: req.user.id,
                     deliveryName: delivery.deliveryName,
                     deliveryPhone: delivery.deliveryPhone,
@@ -457,6 +549,26 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // ── Helpers ──
+
+/**
+ * Generate a unique, human-readable order number: CG-YYMMDD-#### (daily counter).
+ */
+async function generateOrderNumber() {
+    const now = new Date();
+    const ymd = `${String(now.getFullYear()).slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const countToday = await prisma.order.count({ where: { createdAt: { gte: dayStart } } });
+    let seq = countToday + 1;
+    // Guard against collisions (concurrent placement / retries)
+    for (let attempt = 0; attempt < 50; attempt++) {
+        const candidate = `CG-${ymd}-${String(seq).padStart(4, '0')}`;
+        const exists = await prisma.order.findUnique({ where: { orderNumber: candidate } });
+        if (!exists) return candidate;
+        seq++;
+    }
+    return `CG-${ymd}-${Date.now().toString().slice(-5)}`;
+}
+
 function formatOrder(order) {
     return {
         id: order.id,

@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -34,6 +34,7 @@ model User {
 
   orders        Order[]           @relation("CustomerOrders")
   cancelledOrders Order[]         @relation("CancelledByUser")
+  deliveries    Order[]           @relation("DeliveryAssignee")
   sessions      Session[]
   dealUsages    DealUsage[]
   dealsCreated  Deal[]            @relation("DealCreator")
@@ -159,8 +160,11 @@ model Order {
   // Status
   status                  OrderStatus @default(payment_verification_pending)
 
+  // Delivery assignment (admin assigns a delivery person to fulfil the order)
+  assignedDeliveryId      String?     @map("assigned_delivery_id")
+
   // Cancellation
-  cancelledBy             String?     @map("cancelled_by") 
+  cancelledBy             String?     @map("cancelled_by")
   cancelReason            String?     @map("cancel_reason")
 
   // Settlement
@@ -175,6 +179,7 @@ model Order {
   // Relations
   user                    User        @relation("CustomerOrders", fields: [userId], references: [id])
   cancelledByUser         User?       @relation("CancelledByUser", fields: [cancelledBy], references: [id])
+  assignedDelivery        User?       @relation("DeliveryAssignee", fields: [assignedDeliveryId], references: [id])
   appliedDeal             Deal?       @relation(fields: [appliedDealId], references: [id])
   items                   OrderItem[]
   logs                    OrderLog[]

@@ -19,7 +19,8 @@ router.get('/orders', async (req, res, next) => {
     try {
         const orders = await prisma.order.findMany({
             where: {
-                status: { in: ['ready', 'out_for_delivery'] }
+                status: { in: ['ready', 'out_for_delivery'] },
+                assignedDeliveryId: req.user.id   // only orders assigned to THIS delivery person
             },
             include: {
                 items: {
@@ -63,7 +64,8 @@ router.get('/orders/:id', async (req, res, next) => {
         const order = await prisma.order.findFirst({
             where: {
                 id: req.params.id,
-                status: { in: ['ready', 'out_for_delivery'] }
+                status: { in: ['ready', 'out_for_delivery'] },
+                assignedDeliveryId: req.user.id
             },
             include: {
                 items: true,

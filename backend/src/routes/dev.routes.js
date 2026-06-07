@@ -140,9 +140,8 @@ router.get('/orders', async (req, res, next) => {
                     value: parseFloat(o.appliedDeal.discountValue)
                 } : null,
                 payment: {
-                    verified: o.paymentVerified,
-                    razorpayOrderId: o.razorpayOrderId,
-                    razorpayPaymentId: o.razorpayPaymentId,
+                    verified: !!o.paidAt,
+                    transactionId: o.transactionId,
                     paidAt: o.paidAt
                 },
                 auditLog: o.logs.map(l => ({

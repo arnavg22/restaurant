@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cafeteria Green</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(165deg,var(--leaf) 0%,var(--leaf-deep) 100%);padding:24px}
+.hub{width:760px;max-width:100%}
+.head{color:#fff;text-align:center;margin-bottom:28px}
+.head .lm{width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+.head .lm svg{width:36px;height:36px}
+.head h1{font-size:40px;letter-spacing:-.02em}
+.head p{opacity:.9;margin-top:6px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.tile{background:#fff;border-radius:18px;padding:22px;text-decoration:none;color:var(--ink);transition:transform .18s ease,box-shadow .18s ease;display:block}
+.tile:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.18)}
+.tile .ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px}
+.tile h3{font-size:18px}
+.tile p{font-size:13px;color:var(--ink-faint);margin-top:4px;line-height:1.5}
+.tile .role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--leaf-deep);margin-top:10px}
+.t-cust .ic{background:var(--leaf-bg)} .t-admin .ic{background:oklch(0.95 0.06 75)}
+.t-del .ic{background:oklch(0.93 0.06 230)} .t-dev .ic{background:var(--panel-2)}
+.foot{text-align:center;color:rgba(255,255,255,.85);font-size:12.5px;margin-top:22px;line-height:1.7}
+.foot code{background:rgba(255,255,255,.16);padding:2px 7px;border-radius:6px}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.head h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="hub">
+  <div class="head">
+    <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
+    <h1>Cafeteria Green</h1>
+    <p>Office food delivery · choose your dashboard</p>
+  </div>
+  <div class="grid">
+    <a class="tile t-cust" href="customer.html"><div class="ic">🛒</div><h3>Customer</h3><p>Browse the menu, pay by UPI QR, track your delivery.</p><div class="role">Self sign-up</div></a>
+    <a class="tile t-admin" href="admin.html"><div class="ic">🧾</div><h3>Admin / Counter</h3><p>Verify payments, run the kitchen board, assign delivery.</p><div class="role">admin@cafeteriagrean.in</div></a>
+    <a class="tile t-del" href="delivery.html"><div class="ic">🛵</div><h3>Delivery Partner</h3><p>See your assigned orders, pick up and mark delivered.</p><div class="role">delivery@cafeteriagrean.in</div></a>
+    <a class="tile t-dev" href="developer.html"><div class="ic">💻</div><h3>Developer Console</h3><p>Platform analytics, commission, order log, deals.</p><div class="role">dev@cafeteriagrean.in</div></a>
+  </div>
+  <div class="foot">Staff password: <code>CafeGreen@2026</code> · API &amp; app served from <code>localhost:3000</code></div>
+</div>
+</body>
+</html>

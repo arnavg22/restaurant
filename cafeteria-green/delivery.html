@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cafeteria Green — Delivery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.06)}
+.topbar{background:var(--leaf-deep);color:#fff;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.topbar .brand b{font-family:'Bricolage Grotesque';font-size:17px}
+.topbar .brand small{display:block;font-size:11px;opacity:.85}
+.topbar .right{display:flex;align-items:center;gap:14px}
+.count-big{text-align:right}.count-big .n{font-family:'Bricolage Grotesque';font-size:26px;font-weight:800;line-height:1}.count-big .l{font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:.05em}
+.logout{font-size:12px;color:rgba(255,255,255,.85);cursor:pointer}
+.body{padding:16px 16px 60px}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;animation:fadeSlideUp .3s ease}
+.dcard.ofd{border-color:var(--leaf);box-shadow:0 0 0 1px var(--leaf-bg)}
+.dc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dc-id{font-family:'Bricolage Grotesque';font-weight:700;font-size:17px}
+.addr{background:var(--leaf-bg);border-radius:12px;padding:13px;margin-bottom:10px}
+.addr .b{font-weight:700;font-size:16px}
+.addr .l{font-size:13.5px;color:var(--ink-soft);margin-top:3px}
+.addr .ph{margin-top:8px}
+.addr .ph a{color:var(--leaf-deep);font-weight:700;text-decoration:none;font-size:14px}
+.items{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6}
+.notes{font-size:13px;color:var(--bean);background:oklch(0.96 0.04 75);border-radius:9px;padding:9px 12px;margin-bottom:10px}
+.dc-foot{display:flex;justify-content:space-between;align-items:center}
+.amt{font-weight:700;font-size:15px}
+.amt small{font-weight:500;color:var(--ink-faint);font-size:12px}
+.empty{padding:80px 20px;text-align:center;color:var(--ink-faint)}
+.empty .big{font-size:54px;opacity:.5;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="lm"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 16l3-8h8l3 8M7 16h10M9 16v2M15 16v2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>Delivery Partner</h1><div class="role-tag">Cafeteria Green · Your assigned deliveries</div>
+    <div class="login-err" id="err"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" value="delivery@cafeteriagrean.in"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
+    <button class="btn block" id="loginBtn" onclick="doLogin()">Log in</button>
+    <div class="login-hint">Demo delivery accounts (password <b>CafeGreen@2026</b>):<br>delivery@cafeteriagrean.in · ravi.delivery@cafeteriagrean.in · priya.delivery@cafeteriagrean.in</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app hidden" id="app">
+  <div class="topbar">
+    <div class="brand"><b>My Deliveries</b><small id="who">Cafeteria Green</small></div>
+    <div class="right"><div class="count-big"><div class="n" id="count">0</div><div class="l">Assigned</div></div><span class="logout" onclick="logout()">Log out</span></div>
+  </div>
+  <div class="body" id="list"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cg-api.js"></script>
+<script>
+const { CGApi, rupee, toast, STATUS_LABEL } = CG;
+const api = CGApi('delivery');
+const $ = s=>document.querySelector(s);
+let socket=null, pollTimer=null;
+
+function doLogin(){
+  const btn=$('#loginBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  api.login($('#email').value.trim(), $('#pass').value)
+    .then(()=>enterApp())
+    .catch(e=>{ const el=$('#err'); el.textContent=e.message; el.classList.add('show'); btn.disabled=false; btn.textContent='Log in'; });
+}
+function logout(){ if(socket)socket.disconnect(); clearInterval(pollTimer); api.logout(); location.reload(); }
+
+function enterApp(){
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#who').textContent = api.user?.name || 'Cafeteria Green';
+  socket = api.connectSocket({
+    'order:assigned': ()=>{ toast('New delivery assigned!'); refresh(); },
+    'order:ready': ()=>refresh(),
+  });
+  refresh();
+  pollTimer=setInterval(refresh, 5000);
+}
+
+async function refresh(){
+  let orders;
+  try{ orders = await api.get('/delivery/orders'); }catch(e){ return; }
+  $('#count').textContent = orders.length;
+  if(!orders.length){ $('#list').innerHTML = `<div class="empty"><div class="big">🛵</div><b style="font-size:18px">No deliveries assigned</b><div style="margin-top:6px">Orders the counter assigns to you will appear here.</div></div>`; return; }
+  $('#list').innerHTML = orders.map(card).join('');
+}
+function card(o){
+  const ofd = o.status==='out_for_delivery';
+  const items = o.items.map(i=>`${i.quantity}× ${i.name}`).join(', ');
+  return `<div class="dcard ${ofd?'ofd':''}">
+    <div class="dc-top"><span class="dc-id">#${o.orderNumber}</span><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]}</span></div>
+    <div class="addr"><div class="b">${o.delivery.building}</div><div class="l">${o.delivery.floorSeat}</div>
+      <div class="l">${o.delivery.name}</div><div class="ph">📞 <a href="tel:${o.delivery.phone}">${o.delivery.phone}</a></div></div>
+    <div class="items">${items}</div>
+    ${o.delivery.notes?`<div class="notes">📝 ${o.delivery.notes}</div>`:''}
+    <div class="dc-foot"><span class="amt">${rupee(o.total)} <small>· collect on delivery if unpaid</small></span></div>
+    <div style="margin-top:12px">${ofd
+      ? `<button class="btn block" onclick="setStatus('${o.id}','delivered')">Mark Delivered ✓</button>`
+      : `<button class="btn block soft" onclick="setStatus('${o.id}','out_for_delivery')">Pick up — Out for delivery →</button>`}</div>
+  </div>`;
+}
+async function setStatus(id, status){
+  try{ await api.patch('/delivery/orders/'+id+'/status',{status}); toast(status==='delivered'?'Delivered ✓':'Out for delivery'); refresh(); }
+  catch(e){ toast(e.message); }
+}
+
+if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
+</script>
+</body>
+</html>

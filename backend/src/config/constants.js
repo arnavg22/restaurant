@@ -8,11 +8,11 @@ export const ORDER_PAYMENT_TIMEOUT = parseInt(process.env.ORDER_PAYMENT_TIMEOUT_
 
 // Valid status transitions
 export const STATUS_TRANSITIONS = {
-    pending_payment: ['placed', 'payment_expired'],
-    placed:          ['accepted', 'cancelled'],
+    // Customer places order with a UPI transaction ID → awaits MANUAL payment verification by admin
+    payment_verification_pending: ['accepted', 'cancelled', 'payment_expired'],
     accepted:        ['preparing', 'cancelled'],
     preparing:       ['ready', 'cancelled'],
-    ready:           ['out_for_delivery'],
+    ready:           ['out_for_delivery', 'cancelled'],
     out_for_delivery: ['delivered'],
     // Terminal states — no transitions out
     delivered:       [],
@@ -22,8 +22,7 @@ export const STATUS_TRANSITIONS = {
 
 // Who can transition to each status
 export const STATUS_AUTHORIZERS = {
-    placed:            ['system'],           // auto via webhook
-    accepted:          ['admin'],
+    accepted:          ['admin'],            // admin manually verifies the UPI transaction ID
     preparing:         ['admin'],
     ready:             ['admin'],
     out_for_delivery:  ['admin', 'delivery'],

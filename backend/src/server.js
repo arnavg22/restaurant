@@ -36,12 +36,34 @@ app.set('io', io);
 app.set('prisma', new PrismaClient());
 
 // ── Middleware ──
-app.use(helmet());
+// CSP tuned for the served dashboards: same-origin scripts/styles + the few
+// inline bits they use, Google Fonts, data: images (UPI QR), and same-origin
+// WebSocket (Socket.IO). upgrade-insecure-requests is disabled so it works on local http.
+app.use(helmet({
+    contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+            'script-src': ["'self'", "'unsafe-inline'"],
+            'script-src-attr': ["'unsafe-inline'"],
+            'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            'font-src': ["'self'", 'https://fonts.gstatic.com'],
+            'img-src': ["'self'", 'data:'],
+            'connect-src': ["'self'"],
+            'upgrade-insecure-requests': null,
+        },
+    },
+}));
 app.use(cors());
+
+// Quiet favicon 404s for the dashboards
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.use(express.json());
 
-app.use(express.static('../frontend'));
+// Serve the connected Cafeteria Green app (customer/admin/delivery/developer) same-origin.
+// Available at both / and /app for convenience.
+app.use(express.static('../cafeteria-green'));
+app.use('/app', express.static('../cafeteria-green'));
 
 // ── Health Check ──
 app.get('/health', (req, res) => {
