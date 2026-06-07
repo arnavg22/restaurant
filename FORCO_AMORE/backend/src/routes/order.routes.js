@@ -436,6 +436,7 @@ function formatOrder(order) {
         financials: {
             subtotal: parseFloat(order.subtotal),
             discountAmount: parseFloat(order.discountAmount),
+            taxAmount: parseFloat(order.taxAmount || 0),
             customerPays: parseFloat(order.customerPays)
         },
         deal: order.appliedDeal ? {

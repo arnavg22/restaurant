@@ -4,6 +4,7 @@
 
 export const PLATFORM_FEE_RATE = parseFloat(process.env.PLATFORM_FEE_RATE || '0.15');
 export const RESTAURANT_SHARE_RATE = 1 - PLATFORM_FEE_RATE; // 0.85
+export const TAX_RATE = parseFloat(process.env.TAX_RATE || '0.05'); // 5% tax on order subtotal
 export const ORDER_PAYMENT_TIMEOUT = parseInt(process.env.ORDER_PAYMENT_TIMEOUT_MINUTES || '10');
 
 // Valid status transitions

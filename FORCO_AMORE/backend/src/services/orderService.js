@@ -6,6 +6,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import {
     PLATFORM_FEE_RATE,
     RESTAURANT_SHARE_RATE,
+    TAX_RATE,
     STATUS_TRANSITIONS,
     STATUS_AUTHORIZERS,
     ORDER_PAYMENT_TIMEOUT,
@@ -47,14 +48,20 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0) {
 
     const platformFee = roundMoney(subtotal * PLATFORM_FEE_RATE);
     const restaurantShare = roundMoney(subtotal * RESTAURANT_SHARE_RATE);
-    const customerPays = roundMoney(subtotal - cappedDiscount);
+
+    // 5% tax on the discounted subtotal (what customer actually pays before tax)
+    const preTotal = roundMoney(subtotal - cappedDiscount);
+    const taxAmount = roundMoney(preTotal * TAX_RATE);
+    const customerPays = roundMoney(preTotal + taxAmount);
+
     const platformEarnings = roundMoney(platformFee - cappedDiscount);
     const discountFromPlatform = roundMoney(cappedDiscount);
 
     return {
         subtotal: roundMoney(subtotal),
         discountAmount: discountFromPlatform,    // actual discount applied
-        customerPays,
+        taxAmount,                                // 5% tax
+        customerPays,                             // subtotal - discount + tax
         platformFee,
         discountFromPlatform,
         platformEarnings,

@@ -440,7 +440,8 @@ function renderCart(){
   // bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
-    <div class="bill-row total"><span>To pay</span><span>${rupee(sub-disc)}</span></div></div>
+    <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-disc)*0.05))}</span></div>
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>
     <div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
   $('#cartBody').innerHTML = html;
 }
@@ -594,6 +595,7 @@ async function renderTrack(){
   if(order.specialRequest){ html += `<div class="spec-box">⚠ Special request: ${order.specialRequest}</div>`; }
   html += `<div class="bill">${order.items.map(i=>`<div class="bill-row"><span>${i.quantity}× ${i.name}</span><span>${rupee(i.total)}</span></div>`).join('')}
     ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
+    ${order.financials.taxAmount>0?`<div class="bill-row"><span>Tax (5%)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
     <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>
     <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.delivery.floorSeat}, ${order.delivery.building}</div>
     <div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;
