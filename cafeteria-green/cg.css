@@ -61,6 +61,10 @@ input,select,textarea{font-family:inherit}
 .muted{color:var(--ink-faint)}
 .empty{text-align:center;padding:60px 20px;color:var(--ink-faint)}
 
+/* powered-by tag */
+.powered{text-align:center;font-size:12px;color:var(--ink-faint);padding:16px 0 4px;letter-spacing:.01em}
+.powered b{color:var(--leaf-deep);font-weight:700}
+
 /* spinner */
 .spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
