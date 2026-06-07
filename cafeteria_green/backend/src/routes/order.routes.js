@@ -354,14 +354,21 @@ router.post('/', async (req, res, next) => {
 
         // ── 3. Calculate subtotal with price snapshot (resolves Bar variants) ──
         const itemMap = new Map(menuItems.map(m => [m.id, m]));
+        // Categories exempt from the 15% platform fee (100% restaurant)
+        const EXEMPT_CATEGORIES = ['cafeteria special thali'];
 
         let subtotal = 0;
         let developerDiscountTotal = 0;
+        let exemptSubtotal = 0;
         const orderItems = items.map(item => {
-            const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
+            const menuItem = itemMap.get(item.menuItemId);
+            const line = resolveLine(menuItem, item.variant);
             developerDiscountTotal += line.devDiscount * item.quantity;
             const itemTotal = Math.round(line.unitPrice * item.quantity * 100) / 100;
             subtotal += itemTotal;
+            if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
+                exemptSubtotal += itemTotal;
+            }
 
             return {
                 menuItemId: item.menuItemId,
@@ -411,7 +418,8 @@ router.post('/', async (req, res, next) => {
         // ── 5. Calculate all financials ──
         // Both per-item developer discounts and any deal come out of the platform's 15% share.
         const discountAmount = Math.round((developerDiscountTotal + dealDiscount) * 100) / 100;
-        const financials = calculateOrderFinancials(subtotal, discountAmount);
+        exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
+        const financials = calculateOrderFinancials(subtotal, discountAmount, exemptSubtotal);
 
         // ── 5b. Generate a human-friendly, unique order number ──
         const orderNumber = await generateOrderNumber();
@@ -623,6 +631,7 @@ function formatOrder(order) {
         financials: {
             subtotal: parseFloat(order.subtotal),
             discountAmount: parseFloat(order.discountAmount),
+            taxAmount: parseFloat(order.taxAmount || 0),
             customerPays: parseFloat(order.customerPays)
         },
         deal: order.appliedDeal ? {
