@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="cg.css">
 <style>
-.app{max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.06);position:relative;display:flex;flex-direction:column;overflow:hidden}
+.app{max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
 .screen{display:none;flex-direction:column;flex:1;min-height:0}
 .screen.active{display:flex}
 .topbar{background:var(--leaf);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
@@ -18,7 +18,7 @@
 .topbar .brand small{display:block;font-size:11px;opacity:.85}
 .iconbtn{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;position:relative;color:#fff}
 .iconbtn svg{width:22px;height:22px}
-.badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--amber);color:var(--ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--leaf)}
+.badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;background:var(--amber);color:var(--bg);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--leaf)}
 .back-btn{display:flex;align-items:center;gap:8px;color:#fff;font-weight:600;font-size:15px}
 .back-btn svg{width:20px;height:20px}
 .logout{font-size:12px;color:rgba(255,255,255,.85);cursor:pointer}
@@ -28,19 +28,16 @@
 .seg{display:flex;gap:6px;background:var(--panel-2);padding:5px;border-radius:13px;margin-bottom:10px}
 .seg button{flex:1;height:40px;border-radius:10px;font-weight:700;font-size:14px;color:var(--ink-soft);transition:all .15s}
 .seg button.sel{background:var(--leaf);color:#fff}
-.add-from{font-size:11px;color:var(--ink-faint);font-weight:500;margin-top:2px}
-/* variant modal */
 .modal-bg{position:absolute;inset:0;background:rgba(15,23,20,.55);display:none;align-items:flex-end;justify-content:center;z-index:60}
 .modal-bg.show{display:flex}
-.vmodal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 18px 24px;animation:fadeSlideUp .25s ease}
+.vmodal{background:var(--panel);border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 18px 24px;animation:fadeSlideUp .25s ease}
 .vmodal h3{font-size:18px}
 .vmodal .sub{font-size:13px;color:var(--ink-faint);margin-bottom:14px}
 .vopt{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:10px;cursor:pointer;transition:all .15s}
-.vopt:active{transform:scale(.99)}
 .vopt:hover{border-color:var(--leaf)}
 .vopt b{font-size:15px}
 .vopt .vp{font-weight:700;color:var(--leaf-deep)}
-.vmodal .cancel{width:100%;text-align:center;padding:12px;color:var(--ink-faint);font-weight:600;margin-top:4px}
+.vmodal .cancel{width:100%;text-align:center;padding:12px;color:var(--ink-faint);font-weight:600;margin-top:4px;cursor:pointer}
 .cat-head{padding:16px 0 6px;border-left:3px solid var(--leaf);padding-left:12px;margin-top:8px}
 .cat-head h3{font-size:17px}
 .item{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft);align-items:flex-start}
@@ -48,11 +45,11 @@
 .item-name{font-weight:600;font-size:15px}
 .item-desc{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
 .item-price{font-weight:700;font-size:14px;margin-top:6px}
-.add-btn{width:40px;height:40px;border-radius:12px;background:var(--leaf-bg);color:var(--leaf-deep);font-size:22px;font-weight:700;border:1px solid oklch(0.88 0.05 150)}
+.add-btn{width:40px;height:40px;border-radius:12px;background:var(--leaf-bg);color:var(--leaf-deep);font-size:22px;font-weight:700;border:1px solid var(--line)}
+.add-from{font-size:11px;color:var(--ink-faint);font-weight:500;margin-top:2px}
 .stepper{display:flex;align-items:center;background:var(--leaf);border-radius:12px;height:40px;overflow:hidden}
 .stepper button{width:34px;height:40px;color:#fff;font-size:19px;font-weight:700}
 .stepper span{min-width:24px;text-align:center;color:#fff;font-weight:700}
-/* bottom nav */
 .botnav{flex:0 0 58px;width:100%;background:var(--panel);border-top:1px solid var(--line);display:none;z-index:40}
 .botnav.show{display:flex}
 .botnav button{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink-faint);font-size:11px;font-weight:600}
@@ -72,7 +69,6 @@
 .deal-chip.sel{border-color:var(--leaf);background:var(--leaf-bg)}
 .deal-chip b{font-size:13px}
 .deal-chip span{display:block}
-/* address cards */
 .addr-card{border:1.5px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:border .15s}
 .addr-card.sel{border-color:var(--leaf);background:var(--leaf-bg)}
 .addr-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;margin-top:2px;display:flex;align-items:center;justify-content:center}
@@ -89,11 +85,10 @@
 .qr-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;text-align:center;margin-bottom:16px}
 .qr-box img{width:240px;height:240px;max-width:100%}
 .qr-amt{font-family:'Bricolage Grotesque';font-size:30px;font-weight:800;color:var(--leaf-deep)}
-.qr-vpa{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.qr-vpa{font-size:13px;color:#666;margin-top:4px}
 .upi-link{display:inline-flex;margin-top:12px}
 .pay-steps{font-size:13px;color:var(--ink-soft);line-height:1.7;background:var(--panel-2);border-radius:12px;padding:14px 16px;margin-bottom:16px}
 .pay-steps b{color:var(--ink)}
-/* orders tab */
 .ord-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
 .ord-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .ord-id{font-family:'Bricolage Grotesque';font-weight:700;font-size:15px}
@@ -128,10 +123,6 @@
 .agent-box{display:flex;align-items:center;gap:12px;background:var(--leaf-bg);border-radius:14px;padding:13px 14px;margin-bottom:12px}
 .agent-box .agent-ic{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:0 0 auto}
 .agent-box a{flex:0 0 auto;text-decoration:none}
-.powered{text-align:center;font-size:12px;color:var(--ink-faint);padding:18px 0 6px;letter-spacing:.01em}
-.powered b{color:var(--leaf-deep);font-weight:700}
-.powered.on-leaf{color:rgba(255,255,255,.85)}
-.powered.on-leaf b{color:#fff}
 </style>
 </head>
 <body>
@@ -140,9 +131,9 @@
   <!-- LOGIN / REGISTER -->
   <div class="login-wrap screen active" id="screen-auth">
     <div class="login-card">
-      <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
+      <div class="lm" style="background:var(--primary)"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
       <h1 id="authTitle">Welcome back</h1>
-      <div class="role-tag">FORCO AMORE · Order food to your desk</div>
+      <div class="role-tag">FORCO AMORE · Order food</div>
       <div class="login-err" id="authErr"></div>
       <div id="loginForm">
         <div class="field"><label>Email</label><input id="liEmail" type="email" placeholder="you@office.com"></div>
@@ -158,7 +149,6 @@
         <button class="btn block" id="regBtn" onclick="doRegister()">Create account &amp; start</button>
         <div class="login-alt">Already have an account? <a onclick="showLogin()">Log in</a></div>
       </div>
-      </div>
     </div>
   </div>
 
@@ -166,14 +156,13 @@
   <div class="screen" id="screen-menu">
     <div class="topbar">
       <div class="brand"><svg class="leaf-svg" viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg>
-        <div><b>FORCO AMORE</b><small id="menuHello">Delivery</small></div></div>
+        <div><b>FORCO AMORE</b><small id="menuHello">Menu</small></div></div>
       <button class="iconbtn" onclick="go('cart')">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="#fff"/><circle cx="18" cy="20" r="1.4" fill="#fff"/></svg>
         <span class="badge" id="cartBadge" style="display:none">0</span>
       </button>
     </div>
     <div class="menuhead">
-      <div class="seg" id="sectionTabs"><button data-sec="Food" class="sel" onclick="setSection('Food')">🍽 Food</button><button data-sec="Bar" onclick="setSection('Bar')">🍺 Bar</button></div>
       <input id="search" placeholder="Search dishes…" oninput="renderMenu()">
     </div>
     <div class="body" id="menuBody"><div class="empty">Loading menu…</div></div>
@@ -186,7 +175,7 @@
     <div class="body" id="ordersBody"><div class="empty">Loading…</div></div>
   </div>
 
-  <!-- CART + DELIVERY -->
+  <!-- CART -->
   <div class="screen" id="screen-cart">
     <div class="topbar"><button class="back-btn" onclick="go('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Your order</button><div style="width:20px"></div></div>
     <div class="body" id="cartBody"></div>
@@ -198,7 +187,7 @@
     <div class="body" id="payBody"></div>
   </div>
 
-  <!-- TRACK / ORDER DETAIL -->
+  <!-- TRACK -->
   <div class="screen" id="screen-track">
     <div class="topbar"><button class="back-btn" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Order status</button><div style="width:20px"></div></div>
     <div class="body" id="trackBody"></div>
@@ -226,16 +215,18 @@
 <script>
 const { CGApi, rupee, toast, STATUS_LABEL } = CG;
 const api = CGApi('customer');
-let MENU = [], CART = {}, DEALS = [], selectedDeal = null, activeSection = 'Food';
+let MENU = [], CART = {}, DEALS = [], selectedDeal = null;
 let ADDRESSES = [], selectedAddressId = null;
 let currentOrderId = null, trackTimer = null, ordersTimer = null, socket = null;
+let orderType = 'DELIVERY'; // DELIVERY | DINE_IN | TAKEAWAY
+let paymentMethod = 'ONLINE'; // ONLINE | COUNTER
 const $ = s => document.querySelector(s);
 
 const FLOW = [
-  ['payment_verification_pending','Order placed','Awaiting payment verification by counter'],
-  ['accepted','Payment verified','Order accepted'],
+  ['payment_verification_pending','Order placed','Awaiting payment verification'],
+  ['accepted','Accepted','Order confirmed'],
   ['preparing','In the kitchen','Your food is being prepared'],
-  ['ready','Ready','Packed and ready for pickup'],
+  ['ready','Ready','Packed and ready'],
   ['out_for_delivery','Out for delivery','On the way to you'],
   ['delivered','Delivered','Enjoy your meal!'],
 ];
@@ -245,14 +236,10 @@ const flowIndex = (s)=>FLOW.findIndex(f=>f[0]===s);
 function go(screen){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $('#screen-'+screen).classList.add('active');
-  window.scrollTo(0,0);
-  // bottom nav visible only on menu/orders
   const navScreens = (screen==='menu'||screen==='orders');
   $('#botnav').classList.toggle('show', navScreens);
   $('#botnav').querySelectorAll('button').forEach(b=>b.classList.toggle('sel', b.dataset.nav===screen));
-  // cart bar only on menu
   updateCartBar(screen);
-  // per-screen
   if(screen==='cart') renderCart();
   if(screen==='orders'){ loadOrders(); startOrdersPolling(); } else stopOrdersPolling();
   if(screen==='track') startTracking(); else stopTracking();
@@ -276,7 +263,7 @@ async function doRegister(){
 function logout(){ if(socket) socket.disconnect(); stopTracking(); stopOrdersPolling(); api.logout(); location.reload(); }
 
 async function enterApp(){
-  $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there') + ' · Delivery';
+  $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there');
   connectRealtime();
   await loadMenu();
   loadDeals(); loadAddresses(); refreshOrdersBadge();
@@ -294,19 +281,14 @@ function connectRealtime(){
 async function loadMenu(){ try{ MENU = await api.get('/menu'); renderMenu(); }catch(e){ $('#menuBody').innerHTML = `<div class="empty">Couldn't load menu: ${e.message}</div>`; } }
 async function loadDeals(){ try{ DEALS = await api.get('/orders/deals'); }catch{ DEALS=[]; } }
 
-function setSection(sec){
-  activeSection = sec;
-  $('#sectionTabs').querySelectorAll('button').forEach(b=>b.classList.toggle('sel', b.dataset.sec===sec));
-  renderMenu();
-}
 function ckey(id, variant){ return variant ? id+'::'+variant : id; }
 function renderMenu(){
   const q = $('#search').value.trim().toLowerCase();
+  const filtered = MENU.filter(it=>(it.section||'Food')==='Food').filter(it=>!q || it.name.toLowerCase().includes(q));
   const cats = {};
-  MENU.filter(it=>(it.section||'Food')===activeSection).filter(it=>!q || it.name.toLowerCase().includes(q))
-    .forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
+  filtered.forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
   const keys = Object.keys(cats);
-  if(!keys.length){ $('#menuBody').innerHTML=`<div class="empty">No ${activeSection.toLowerCase()} items${q?' match your search':''}.</div>`; return; }
+  if(!keys.length){ $('#menuBody').innerHTML=`<div class="empty">No items${q?' match your search':''}.</div>`; return; }
   let html='';
   keys.forEach(cat=>{
     html += `<div class="cat-head"><h3>${cat}</h3></div>`;
@@ -321,9 +303,8 @@ function renderMenu(){
         <div class="item-price">${priceHtml}</div></div><div class="add-col" id="add-${it.id}"></div></div>`;
     });
   });
-  html += ``;
   $('#menuBody').innerHTML = html;
-  Object.values(cats).flat().forEach(it=>renderAdd(it));
+  filtered.forEach(it=>renderAdd(it));
 }
 function renderAdd(it){
   const slot=document.getElementById('add-'+it.id); if(!slot) return;
@@ -346,7 +327,6 @@ function chg(id, variant, d){
   if(CART[key].qty<=0) delete CART[key];
   renderAdd(it); updateCartBar();
 }
-/* variant modal */
 function openVariant(id){
   const it = MENU.find(m=>m.id===id); if(!it||!it.hasVariants) return;
   $('#vmTitle').textContent = it.name;
@@ -369,7 +349,6 @@ function updateCartBar(){
 
 /* ---------- ADDRESSES ---------- */
 async function loadAddresses(){ try{ ADDRESSES = await api.get('/addresses'); if(!selectedAddressId && ADDRESSES.length) selectedAddressId = ADDRESSES[0].id; }catch{ ADDRESSES=[]; } }
-function addressLines(a){ return `${a.buildingName} · ${a.floorSeat}<br>${a.deliveryName} · ${a.deliveryPhone}`; }
 function selectAddress(id){ selectedAddressId = id; renderCart(); }
 async function saveAddress(){
   const payload = { label:$('#afLabel').value.trim(), deliveryName:$('#afName').value.trim(), deliveryPhone:$('#afPhone').value.trim(), buildingName:$('#afBuilding').value.trim(), floorSeat:$('#afFloor').value.trim() };
@@ -385,21 +364,42 @@ async function removeAddress(id, ev){
 }
 
 /* ---------- CART ---------- */
+let savedSpecial = '', savedNote = '';
+function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id) : null; renderCart(); }
+function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
+function estimateDiscount(deal, sub){
+  let d = deal.discountType==='flat' ? deal.discountValue : sub*deal.discountValue/100;
+  if(deal.discountType==='percent' && deal.maxDiscountAmount) d=Math.min(d, deal.maxDiscountAmount);
+  return Math.min(d, sub*0.15);
+}
+function setOrderType(t){ stashNotes(); orderType=t; renderCart(); }
+function setPaymentMethod(m){ stashNotes(); paymentMethod=m; renderCart(); }
+
 function renderCart(){
   const arr=cartItems();
   if(!arr.length){ $('#cartBody').innerHTML=`<div class="empty">Your cart is empty.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
   let html='';
+  // Order type selector
+  html += `<div class="section-title">Order type</div>
+    <div class="seg"><button class="${orderType==='DELIVERY'?'sel':''}" onclick="setOrderType('DELIVERY')">🛵 Delivery</button>
+    <button class="${orderType==='DINE_IN'?'sel':''}" onclick="setOrderType('DINE_IN')">🍽 Dine-in</button>
+    <button class="${orderType==='TAKEAWAY'?'sel':''}" onclick="setOrderType('TAKEAWAY')">📦 Takeaway</button></div>`;
+  // Payment method selector
+  html += `<div class="section-title">Payment</div>
+    <div class="seg"><button class="${paymentMethod==='ONLINE'?'sel':''}" onclick="setPaymentMethod('ONLINE')">📱 Pay Online (UPI)</button>
+    <button class="${paymentMethod==='COUNTER'?'sel':''}" onclick="setPaymentMethod('COUNTER')">💵 Pay at Counter</button></div>`;
+  // Cart items
+  html += `<div class="section-title">Items</div>`;
   arr.forEach(c=>{
-    const vArg = c.variant ? `'${c.variant.replace(/'/g,"'")}'` : 'null';
+    const vArg = c.variant ? `'${c.variant.replace(/'/g,"&#39;")}'` : 'null';
     const nm = c.item.name + (c.variant?` · ${c.variant}`:'');
     html += `<div class="cart-item"><div style="flex:1"><div class="item-name">${nm}</div><div class="item-price">${rupee(c.unitPrice)}</div></div>
       <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
   });
   const sub=cartSubtotal();
-  // drop a chosen scheme that no longer qualifies
   if(selectedDeal && sub < selectedDeal.minOrderAmount) selectedDeal = null;
   const disc = selectedDeal ? estimateDiscount(selectedDeal, sub) : 0;
-  // discount schemes (choose one)
+  // Deals
   if(DEALS.length){
     const sorted = [...DEALS].sort((a,b)=>a.minOrderAmount-b.minOrderAmount);
     html += `<div class="section-title">Discount schemes <span class="muted" style="font-weight:400;font-size:12px">choose one</span></div><div class="deal-pick">`;
@@ -414,56 +414,85 @@ function renderCart(){
     });
     html += `</div>`;
   }
-  // addresses
-  html += `<div class="section-title">Deliver to</div>`;
-  ADDRESSES.forEach(a=>{
-    html += `<div class="addr-card ${selectedAddressId===a.id?'sel':''}" onclick="selectAddress('${a.id}')">
-      <div class="addr-radio"></div>
-      <div class="addr-main"><div class="addr-label">${a.label?`<span class="addr-tag">${a.label}</span>`:''}${a.deliveryName}</div>
-        <div class="addr-line">${a.buildingName} · ${a.floorSeat}<br>📞 ${a.deliveryPhone}</div></div>
-      <button class="addr-del" onclick="removeAddress('${a.id}',event)" title="Remove">✕</button></div>`;
-  });
-  html += `<div class="addr-add" onclick="document.getElementById('addrForm').classList.toggle('show')">＋ Add a new address</div>
-    <div class="addr-form" id="addrForm">
-      <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
-      <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
-      <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
-      <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
-      <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
-      <button class="btn block soft" onclick="saveAddress()">Save address</button>
-    </div>`;
-  // per-order notes
-  html += `<div class="section-title">Special requests for the kitchen (optional)</div>
-    <div class="field"><textarea id="dSpecial" placeholder="e.g. less spicy, no onions, extra napkins">${savedSpecial}</textarea></div>
-    <div class="section-title">Delivery note (optional)</div>
-    <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival, near reception">${savedNote}</textarea></div>`;
-  // bill
+  // Context fields based on order type
+  if(orderType==='DELIVERY'){
+    html += `<div class="section-title">Deliver to</div>`;
+    ADDRESSES.forEach(a=>{
+      html += `<div class="addr-card ${selectedAddressId===a.id?'sel':''}" onclick="selectAddress('${a.id}')">
+        <div class="addr-radio"></div>
+        <div class="addr-main"><div class="addr-label">${a.label?`<span class="addr-tag">${a.label}</span>`:''}${a.deliveryName}</div>
+          <div class="addr-line">${a.buildingName} · ${a.floorSeat}<br>📞 ${a.deliveryPhone}</div></div>
+        <button class="addr-del" onclick="removeAddress('${a.id}',event)" title="Remove">✕</button></div>`;
+    });
+    html += `<div class="addr-add" onclick="document.getElementById('addrForm').classList.toggle('show')">＋ Add a new address</div>
+      <div class="addr-form" id="addrForm">
+        <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
+        <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
+        <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
+        <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
+        <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
+        <button class="btn block soft" onclick="saveAddress()">Save address</button>
+      </div>`;
+  } else if(orderType==='DINE_IN'){
+    html += `<div class="section-title">Table details</div>
+      <div class="field"><label>Table number *</label><input id="ctxTable" placeholder="e.g. T5" value="${savedTable}"></div>
+      <div class="field"><label>Your name (optional)</label><input id="ctxName" placeholder="${api.user?.name||''}" value="${savedCtxName}"></div>`;
+  } else if(orderType==='TAKEAWAY'){
+    html += `<div class="section-title">Pickup details</div>
+      <div class="field"><label>Name *</label><input id="ctxName" value="${savedCtxName || api.user?.name||''}"></div>
+      <div class="field"><label>Phone *</label><input id="ctxPhone" inputmode="tel" value="${savedCtxPhone || api.user?.phone||''}"></div>`;
+  }
+  // Special request
+  html += `<div class="section-title">Special requests (optional)</div>
+    <div class="field"><textarea id="dSpecial" placeholder="e.g. less spicy, no onions">${savedSpecial}</textarea></div>`;
+  if(orderType==='DELIVERY'){
+    html += `<div class="section-title">Delivery note (optional)</div>
+      <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival">${savedNote}</textarea></div>`;
+  }
+  // Bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
     <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-disc)*0.05))}</span></div>
-    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>
-    <div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>`;
+  // Action button
+  if(paymentMethod==='ONLINE'){
+    html += `<div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
+  } else {
+    html += `<div style="margin-top:16px"><button class="btn block" onclick="placeCounterOrder()">Place order (pay at counter) →</button></div>`;
+  }
   $('#cartBody').innerHTML = html;
 }
-let savedSpecial = '', savedNote = '';
-function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id) : null; renderCart(); }
-function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
-function estimateDiscount(deal, sub){
-  let d = deal.discountType==='flat' ? deal.discountValue : sub*deal.discountValue/100;
-  if(deal.discountType==='percent' && deal.maxDiscountAmount) d=Math.min(d, deal.maxDiscountAmount);
-  return Math.min(d, sub*0.15);
+let savedTable = '', savedCtxName = '', savedCtxPhone = '';
+function stashContext(){
+  const t=$('#ctxTable'), n=$('#ctxName'), p=$('#ctxPhone');
+  if(t) savedTable=t.value;
+  if(n) savedCtxName=n.value;
+  if(p) savedCtxPhone=p.value;
 }
 
-/* ---------- PAYMENT ---------- */
-let pendingDelivery = null, pendingSpecial = '';
+/* ---------- BUILD CONTEXT ---------- */
+function buildContext(){
+  stashNotes(); stashContext();
+  if(orderType==='DELIVERY'){
+    const addr = ADDRESSES.find(a=>a.id===selectedAddressId);
+    if(!addr){ toast('Choose or add a delivery address'); return null; }
+    return { deliveryName:addr.deliveryName, deliveryPhone:addr.deliveryPhone, buildingName:addr.buildingName, floorSeat:addr.floorSeat, deliveryNotes:savedNote.trim()||undefined };
+  } else if(orderType==='DINE_IN'){
+    const table = savedTable.trim();
+    if(!table){ toast('Enter your table number'); return null; }
+    return { tableNumber:table, deliveryName:savedCtxName.trim()||api.user?.name||'' };
+  } else {
+    const name = (savedCtxName||'').trim() || api.user?.name || '';
+    const phone = (savedCtxPhone||'').trim() || api.user?.phone || '';
+    if(!name||!phone){ toast('Enter your name and phone for pickup'); return null; }
+    return { deliveryName:name, deliveryPhone:phone };
+  }
+}
+
+/* ---------- PAYMENT (ONLINE) ---------- */
 async function goToPayment(){
+  const context = buildContext(); if(!context) return;
   stashNotes();
-  const addr = ADDRESSES.find(a=>a.id===selectedAddressId);
-  if(!addr){ toast('Choose or add a delivery address'); document.getElementById('addrForm')?.classList.add('show'); return; }
-  pendingDelivery = { deliveryName:addr.deliveryName, deliveryPhone:addr.deliveryPhone, buildingName:addr.buildingName, floorSeat:addr.floorSeat, deliveryNotes:savedNote.trim() };
-  pendingSpecial = savedSpecial.trim();
-  try{ await api.post('/orders/validate-delivery', { delivery: pendingDelivery }); }
-  catch(e){ toast(e.message.replace(/\n/g,' ')); return; }
   go('pay');
   $('#payBody').innerHTML = `<div class="empty">Generating secure UPI QR…</div>`;
   try{
@@ -476,7 +505,6 @@ async function goToPayment(){
 async function renderPayment(qr){
   const settings = await api.get('/settings/upi');
   const upiId = settings.upi_id;
-
   $('#payBody').innerHTML = `
     <div class="qr-box"><img src="${qr.qr}" alt="UPI QR code">
       <div class="qr-amt">${rupee(qr.amount)}</div>
@@ -489,18 +517,35 @@ async function renderPayment(qr){
 async function placeOrder(){
   const transactionId = $('#txnId').value.trim();
   if(!transactionId){ toast('Enter the UPI transaction ID'); return; }
+  const context = buildContext(); if(!context) return;
   const btn=$('#placeBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   try{
-    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), delivery: pendingDelivery, transactionId };
-    if(pendingSpecial) payload.specialRequest = pendingSpecial;
+    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'ONLINE', context, transactionId };
+    if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
     if(selectedDeal) payload.dealCode = selectedDeal.id;
     const order = await api.post('/orders', payload);
     currentOrderId = order.id;
-    CART={}; selectedDeal=null; savedSpecial=''; savedNote='';
-    refreshOrdersBadge();
-    go('track');
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
+    refreshOrdersBadge(); go('track');
     toast('Order placed! Awaiting payment verification.');
   }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="I've paid — place order"; }
+}
+
+/* ---------- COUNTER PAYMENT ---------- */
+async function placeCounterOrder(){
+  const context = buildContext(); if(!context) return;
+  stashNotes();
+  const btn = event.target; btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{
+    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'COUNTER', context };
+    if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
+    if(selectedDeal) payload.dealCode = selectedDeal.id;
+    const order = await api.post('/orders', payload);
+    currentOrderId = order.id;
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
+    refreshOrdersBadge(); go('track');
+    toast('Order placed! Pay at the counter.');
+  }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="Place order (pay at counter) →"; }
 }
 
 /* ---------- ORDERS TAB ---------- */
@@ -531,7 +576,7 @@ function stopOrdersPolling(){ clearInterval(ordersTimer); ordersTimer=null; }
 async function refreshOrdersBadge(){
   try{
     const resp = await api.get('/orders?limit=10');
-    const active = (resp.orders||[]).filter(o=>!['delivered','cancelled','payment_expired'].includes(o.status)).length;
+    const active = (resp.orders||[]).filter(o=>!['delivered','completed','cancelled','payment_expired'].includes(o.status)).length;
     const b=$('#ordersBadge'); b.style.display=active?'flex':'none'; b.textContent=active;
   }catch{}
 }
@@ -543,28 +588,23 @@ async function reorder(orderId){
   if(!MENU.length){ await loadMenu(); }
   const availById = new Map(MENU.map(m=>[m.id, m]));
   const unavailable = [];
-  const toAdd = [];
+  CART = {};
   order.items.forEach(it=>{
     const m = it.menuItemId && availById.get(it.menuItemId);
     if(!m){ unavailable.push(it.name); return; }
-    // for sized Bar items, the chosen variant must still exist
     if(it.variant){
       const v = (m.variants||[]).find(x=>x.name===it.variant);
       if(!v){ unavailable.push(it.name); return; }
-      toAdd.push({m, variant:v.name, unitPrice:v.price, qty:it.quantity});
+      CART[ckey(m.id,v.name)] = {item:m, variant:v.name, unitPrice:v.price, qty:it.quantity};
     } else if(m.hasVariants){
-      unavailable.push(it.name); // an old line lost its option
+      unavailable.push(it.name);
     } else {
-      toAdd.push({m, variant:null, unitPrice:m.price, qty:it.quantity});
+      CART[ckey(m.id,null)] = {item:m, variant:null, unitPrice:m.price, qty:it.quantity};
     }
   });
-  if(unavailable.length){ toast('Some items are not available: ' + unavailable.join(', ')); return; }
-  CART = {};
-  toAdd.forEach(({m,variant,unitPrice,qty})=>{ CART[ckey(m.id,variant)] = { item:m, variant, unitPrice, qty }; });
+  if(unavailable.length) toast('Some items unavailable: ' + unavailable.join(', '));
   selectedDeal = null;
-  renderMenu();
-  toast('Items added to cart');
-  go('cart');
+  renderMenu(); go('cart');
 }
 
 /* ---------- TRACK ---------- */
@@ -574,13 +614,14 @@ async function renderTrack(){
   if(!currentOrderId) return;
   let order; try{ order = await api.get('/orders/'+currentOrderId); }catch{ return; }
   const cancelled = order.status==='cancelled' || order.status==='payment_expired';
+  const completed = order.status==='completed';
   const curIdx = flowIndex(order.status);
   const itemsLine = order.items.reduce((s,i)=>s+i.quantity,0);
   let html = `<div class="order-id">#${order.orderNumber}</div>
-    <div class="order-sub">${itemsLine} items · ${rupee(order.financials.customerPays)} · ${order.delivery.building}</div>`;
-  if(order.status==='delivered'){ html += `<div class="celebrate show"><div style="font-size:26px">✓</div><b>Delivered — enjoy your meal!</b></div>`; }
+    <div class="order-sub">${itemsLine} items · ${rupee(order.financials.customerPays)} · ${order.orderType||'DELIVERY'}</div>`;
+  if(order.status==='delivered'||completed){ html += `<div class="celebrate show"><div style="font-size:26px">✓</div><b>${completed?'Completed':'Delivered'} — enjoy your meal!</b></div>`; }
   if(cancelled){ html += `<div class="cancel-banner show">This order was ${(STATUS_LABEL[order.status]||order.status).toLowerCase()}.</div>`; }
-  if(!cancelled){
+  if(!cancelled && !completed){
     html += `<div class="progress">` + FLOW.map((f,i)=>{
       const cls = i<curIdx?'done':i===curIdx?'cur':'pending';
       return `<div class="pstep ${cls}"><div class="dotcol"><div class="pdot">${i<curIdx?'✓':i+1}</div><div class="pline"></div></div>
@@ -589,15 +630,14 @@ async function renderTrack(){
   }
   if(order.deliveryAgent && order.status==='out_for_delivery'){
     html += `<div class="agent-box"><div class="agent-ic">🛵</div>
-      <div style="flex:1"><div style="font-weight:700">${order.deliveryAgent.name}</div><div class="muted" style="font-size:12.5px">Your delivery partner is on the way</div></div>
+      <div style="flex:1"><div style="font-weight:700">${order.deliveryAgent.name}</div><div class="muted" style="font-size:12.5px">On the way</div></div>
       <a class="btn sm" href="tel:${order.deliveryAgent.phone}">📞 Call</a></div>`;
   }
-  if(order.specialRequest){ html += `<div class="spec-box">⚠ Special request: ${order.specialRequest}</div>`; }
+  if(order.specialRequest){ html += `<div class="spec-box">⚠ ${order.specialRequest}</div>`; }
   html += `<div class="bill">${order.items.map(i=>`<div class="bill-row"><span>${i.quantity}× ${i.name}</span><span>${rupee(i.total)}</span></div>`).join('')}
     ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
     ${order.financials.taxAmount>0?`<div class="bill-row"><span>Tax (5%)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
     <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>
-    <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.delivery.floorSeat}, ${order.delivery.building}</div>
     <div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;
   $('#trackBody').innerHTML = html;
 }
