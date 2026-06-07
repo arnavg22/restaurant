@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cafeteria Green — Kitchen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+body{background:#0f1714;color:#e8efe9}
+.kheader{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;border-bottom:1px solid #243029;position:sticky;top:0;background:#0f1714;z-index:10}
+.kh-left{display:flex;align-items:center;gap:13px}
+.kh-left .lm{width:42px;height:42px;border-radius:12px;background:var(--leaf);display:flex;align-items:center;justify-content:center}
+.kh-left h1{font-size:21px}
+.kh-left small{color:var(--leaf);font-size:12px;font-weight:600}
+.kh-right{display:flex;align-items:center;gap:18px}
+.count-big{text-align:right}.count-big .n{font-family:'Bricolage Grotesque';font-size:30px;font-weight:800;color:var(--leaf);line-height:1}.count-big .l{font-size:10px;color:#7f9488;text-transform:uppercase;letter-spacing:.06em}
+.logout{font-size:12px;color:#7f9488;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:22px 26px 80px}
+.ticket{background:#16211c;border:1px solid #243029;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;animation:fadeSlideUp .3s ease}
+.ticket.flash{animation:flashk 1.5s ease}
+@keyframes flashk{0%{box-shadow:0 0 0 4px var(--leaf)}100%{box-shadow:none}}
+.t-strip{padding:11px 15px;display:flex;justify-content:space-between;align-items:center;color:#fff}
+.t-strip.s-accepted{background:var(--leaf-deep)}
+.t-strip.s-preparing{background:oklch(0.45 0.10 150)}
+.t-strip.s-ready{background:oklch(0.45 0.12 250)}
+.t-strip.urgent{background:var(--hot)}
+.t-strip .tbl{font-family:'Bricolage Grotesque';font-weight:700;font-size:16px}
+.t-strip .meta{text-align:right;font-size:11px;opacity:.9}.t-strip .meta b{font-size:14px;display:block}
+.t-body{padding:15px;flex:1}
+.t-item{font-size:16px;font-weight:600;padding:6px 0;border-bottom:1px solid #243029}
+.t-item:last-child{border-bottom:none}.t-item .q{color:var(--leaf);font-weight:800;margin-right:7px}
+.special{background:#2a2113;border:1px solid #4a3a1a;color:#ffd9a8;border-radius:10px;padding:11px 13px;margin:12px 0;font-size:14px;line-height:1.45}
+.special .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#c79a52;font-weight:700;display:block;margin-bottom:3px}
+.dest{font-size:12.5px;color:#7f9488;margin-top:10px}
+.statepill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:20px;background:rgba(127,148,136,.18);color:#9fb3a6}
+.t-foot{padding:13px 15px}
+.kbtn{width:100%;height:48px;border-radius:12px;font-weight:700;font-size:15px;transition:transform .15s}
+.kbtn:active{transform:scale(.97)}
+.kbtn.prep{background:oklch(0.55 0.12 150);color:#fff}
+.kbtn.ready{background:var(--leaf);color:#fff}
+.kbtn.wait{background:#1c2a22;color:#7f9488;cursor:default}
+.empty{grid-column:1/-1;text-align:center;padding:100px 20px;color:#7f9488}
+.empty .big{font-size:56px;opacity:.5;margin-bottom:12px}
+.login-wrap{background:linear-gradient(165deg,#16211c,#0f1714)}
+.login-card{background:#16211c;color:#e8efe9;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.login-card h1{color:#fff}.login-card .field label{color:#9fb3a6}
+.login-card .field input{background:#0f1714;border-color:#243029;color:#e8efe9}
+.login-hint{border-top-color:#243029;color:#7f9488}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="lm" style="background:var(--leaf)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 3v8m0 0a3 3 0 003-3V3m-3 8v10M15 3c-1.5 0-2 3-2 5s.5 4 2 4 2-2 2-4-.5-5-2-5zm0 9v9" stroke-linecap="round"/></svg></div>
+    <h1>Kitchen Display</h1><div class="role-tag">Cafeteria Green · Live tickets</div>
+    <div class="login-err" id="err"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@cafeteriagrean.in"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
+    <button class="btn block" id="loginBtn" onclick="doLogin()">Log in</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="hidden" id="app">
+  <div class="kheader">
+    <div class="kh-left"><div class="lm"><svg class="leaf-svg" viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
+      <div><h1>Kitchen Display</h1><small id="who">Cafeteria Green · Live Tickets</small></div></div>
+    <div class="kh-right"><div class="count-big"><div class="n" id="count">0</div><div class="l">Active Tickets</div></div><span class="logout" onclick="logout()">Log out</span></div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cg-api.js"></script>
+<script>
+const { CGApi, toast } = CG;
+const api = CGApi('kitchen');
+const $ = s=>document.querySelector(s);
+let socket=null, pollTimer=null, seen=new Set();
+
+function doLogin(){
+  const btn=$('#loginBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  api.login($('#email').value.trim(), $('#pass').value)
+    .then(()=>enterApp())
+    .catch(e=>{ const el=$('#err'); el.textContent=e.message; el.classList.add('show'); btn.disabled=false; btn.textContent='Log in'; });
+}
+function logout(){ if(socket)socket.disconnect(); clearInterval(pollTimer); api.logout(); location.reload(); }
+
+function enterApp(){
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#who').textContent = (api.user?.name||'Kitchen') + ' · Live Tickets';
+  socket = api.connectSocket({
+    'order:accepted': ()=>{ toast('New order in!'); refresh(); },
+    'order:status_changed': ()=>refresh(),
+  });
+  refresh();
+  pollTimer=setInterval(refresh, 4000);
+}
+
+async function refresh(){
+  let orders;
+  try{ orders = await api.get('/kitchen/orders'); }catch(e){ return; }
+  $('#count').textContent = orders.length;
+  if(!orders.length){ $('#grid').innerHTML = `<div class="empty"><div class="big">🍳</div><b style="font-size:20px;color:#9fb3a6">All caught up</b><div style="margin-top:6px">Accepted orders will appear here.</div></div>`; seen=new Set(); return; }
+  $('#grid').innerHTML = orders.map(ticket).join('');
+  seen = new Set(orders.map(o=>o.id));
+}
+function mins(ts){ return Math.floor((Date.now()-new Date(ts))/60000); }
+function ticket(o){
+  const flash = !seen.has(o.id)?'flash':'';
+  const age = mins(o.createdAt);
+  const urgent = (o.status==='accepted'||o.status==='preparing') && age>=10;
+  const items = o.items.map(i=>`<div class="t-item"><span class="q">${i.quantity}×</span>${i.name}</div>`).join('');
+  const special = o.specialRequest ? `<div class="special"><span class="lbl">⚠ Special request</span>${o.specialRequest}</div>` : '';
+  const delNote = o.deliveryNotes ? `<div class="dest">📦 Delivery note: ${o.deliveryNotes}</div>` : '';
+  let foot;
+  if(o.status==='accepted') foot = `<button class="kbtn prep" onclick="act('${o.id}','prepare')">Start Preparing →</button>`;
+  else if(o.status==='preparing') foot = `<button class="kbtn ready" onclick="act('${o.id}','ready')">Mark Ready ✓</button>`;
+  else foot = `<button class="kbtn wait" disabled>Ready · awaiting delivery pickup</button>`;
+  const label = o.status==='accepted'?'NEW':o.status==='preparing'?'COOKING':'READY';
+  return `<div class="ticket ${flash}">
+    <div class="t-strip s-${o.status} ${urgent?'urgent':''}"><span class="tbl">#${o.orderNumber}</span><span class="meta">${label}<b>${age} min</b></span></div>
+    <div class="t-body">${items}${special}
+      <div class="dest">📍 ${o.building} · ${o.floorSeat}</div>${delNote}</div>
+    <div class="t-foot">${foot}</div></div>`;
+}
+async function act(id, action){ try{ await api.patch('/kitchen/orders/'+id+'/'+action); refresh(); }catch(e){ toast(e.message); } }
+
+if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
+</script>
+</body>
+</html>

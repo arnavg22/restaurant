@@ -14,6 +14,8 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { getPlatformDashboard, getOutstandingCommission, getSettlementHistory, createSettlement } from '../services/revenueService.js';
 import { createDeal, updateDeal, deactivateDeal, getAllDeals, getDealStats } from '../services/dealService.js';
+import { clampDevDiscount, visiblePrice } from '../services/orderService.js';
+import { PLATFORM_FEE_RATE } from '../config/constants.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -21,6 +23,71 @@ const prisma = new PrismaClient();
 
 // All routes require developer authentication
 router.use(authenticate, authorize('developer'));
+
+// ══════════════════════════════════════════════
+// MENU PRICING — developer manages the customer-visible price by
+// discounting out of their 15% share (per item).
+// ══════════════════════════════════════════════
+
+const r2 = (n) => Math.round(n * 100) / 100;
+
+function pricingRow(item) {
+    const base = parseFloat(item.price);
+    const discount = clampDevDiscount(item.price, item.developerDiscount);
+    const grossShare = r2(base * PLATFORM_FEE_RATE);      // developer's full 15%
+    return {
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        isAvailable: item.isAvailable,
+        basePrice: base,                                  // restaurant's menu price
+        restaurantShare: r2(base * (1 - PLATFORM_FEE_RATE)), // always 85%
+        developerGrossShare: grossShare,                  // 15% of base
+        maxDiscount: grossShare,                          // can't discount more than the 15%
+        developerDiscount: discount,                      // current discount given to customer
+        visiblePrice: visiblePrice(item.price, item.developerDiscount), // what the customer sees/pays
+        developerNetShare: r2(grossShare - discount)      // 15% − discount = net share per item
+    };
+}
+
+// ── GET /dev/pricing — per-item pricing & developer share ──
+router.get('/pricing', async (req, res, next) => {
+    try {
+        const items = await prisma.menuItem.findMany({
+            orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }]
+        });
+        res.json(items.map(pricingRow));
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PATCH /dev/pricing/:id — set the per-item developer discount ──
+router.patch('/pricing/:id', async (req, res, next) => {
+    try {
+        const { developerDiscount } = req.body;
+        const item = await prisma.menuItem.findUnique({ where: { id: req.params.id } });
+        if (!item) throw new AppError('Menu item not found', 404, 'NOT_FOUND');
+
+        const base = parseFloat(item.price);
+        const requested = parseFloat(developerDiscount);
+        if (isNaN(requested) || requested < 0) {
+            throw new AppError('Discount must be a positive number', 400, 'VALIDATION_ERROR');
+        }
+        const maxDiscount = r2(base * PLATFORM_FEE_RATE);
+        if (requested > maxDiscount + 0.001) {
+            throw new AppError(`Discount can be at most ₹${maxDiscount} (the 15% developer share on this item)`, 400, 'DISCOUNT_TOO_HIGH');
+        }
+
+        const updated = await prisma.menuItem.update({
+            where: { id: req.params.id },
+            data: { developerDiscount: r2(requested) }
+        });
+        res.json(pricingRow(updated));
+    } catch (err) {
+        next(err);
+    }
+});
 
 // ══════════════════════════════════════════════
 // DASHBOARD & STATISTICS

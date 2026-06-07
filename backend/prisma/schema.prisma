@@ -17,6 +17,7 @@ datasource db {
 enum Role {
   customer
   admin
+  kitchen
   delivery
   developer
 }
@@ -35,6 +36,7 @@ model User {
   orders        Order[]           @relation("CustomerOrders")
   cancelledOrders Order[]         @relation("CancelledByUser")
   deliveries    Order[]           @relation("DeliveryAssignee")
+  addresses     Address[]
   sessions      Session[]
   dealUsages    DealUsage[]
   dealsCreated  Deal[]            @relation("DealCreator")
@@ -47,12 +49,19 @@ model User {
 // MENU ITEMS
 // ─────────────────────────────────────────────
 model MenuItem {
-  id           String    @id @default(uuid()) 
-  name         String    
+  id           String    @id @default(uuid())
+  name         String
   description  String?
-  price        Decimal   
-  category     String    
-  imageUrl     String?   @map("image_url") 
+  price        Decimal
+  // Per-item discount funded by the developer's 15% share (₹). Capped at price * 0.15.
+  // Visible price to customer = price - developerDiscount.
+  developerDiscount Decimal @default(0) @map("developer_discount")
+  category     String
+  // Top-level menu section shown to customers: "Food" | "Bar"
+  section      String    @default("Food")
+  // Bar items can be priced by size: [{ "name": "Pint", "price": 269 }, ...]
+  variants     Json?
+  imageUrl     String?   @map("image_url")
   isAvailable  Boolean   @default(true) @map("is_available")
   sortOrder    Int       @default(0) @map("sort_order")
   createdAt    DateTime  @default(now()) @map("created_at") 
@@ -138,9 +147,12 @@ model Order {
   // Delivery info — MANDATORY, enforced at DB + API + frontend levels
   deliveryName            String      @map("delivery_name") 
   deliveryPhone           String      @map("delivery_phone") 
-  buildingName            String      @map("building_name") 
-  floorSeat               String      @map("floor_seat") 
+  buildingName            String      @map("building_name")
+  floorSeat               String      @map("floor_seat")
   deliveryNotes           String?     @map("delivery_notes")
+
+  // Special cooking requests from the customer (seen by the kitchen)
+  specialRequest          String?     @map("special_request")
 
   // Financials
   subtotal                Decimal     
@@ -192,10 +204,11 @@ model Order {
 // ORDER ITEMS
 // ─────────────────────────────────────────────
 model OrderItem {
-  id           String    @id @default(uuid()) 
-  orderId      String    @map("order_id") 
-  menuItemId   String    @map("menu_item_id") 
-  itemName     String    @map("item_name") 
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  menuItemId   String    @map("menu_item_id")
+  itemName     String    @map("item_name")
+  variant      String?
   quantity     Int
   unitPrice    Decimal   @map("unit_price") 
   itemTotal    Decimal   @map("item_total") 
@@ -269,6 +282,24 @@ model Session {
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+}
+
+// ─────────────────────────────────────────────
+// SAVED DELIVERY ADDRESSES (customer address book)
+// ─────────────────────────────────────────────
+model Address {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  label         String?
+  deliveryName  String   @map("delivery_name")
+  deliveryPhone String   @map("delivery_phone")
+  buildingName  String   @map("building_name")
+  floorSeat     String   @map("floor_seat")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
 }
 
 model PasswordReset {

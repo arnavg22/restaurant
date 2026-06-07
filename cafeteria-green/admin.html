@@ -58,6 +58,7 @@
 select.assign{width:100%;height:36px;border:1px solid var(--line);border-radius:9px;padding:0 8px;font-size:12.5px;margin:6px 0;background:var(--panel)}
 .row-actions{display:flex;gap:6px;margin-top:8px}
 .row-actions .btn{flex:1}
+.prep-note{margin-top:8px;font-size:12.5px;color:var(--leaf-deep);font-weight:600;text-align:center;background:var(--leaf-bg);border-radius:9px;padding:8px}
 /* menu manager */
 table.mm{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden}
 table.mm th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);text-align:left;padding:10px 14px;border-bottom:2px solid var(--line)}
@@ -73,6 +74,12 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
 .kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);font-weight:600}
 .kpi .v{font-family:'Bricolage Grotesque';font-size:26px;font-weight:800;margin-top:5px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.section-head h3{font-size:16px}
+.section-head .sub{font-size:12px;color:var(--ink-faint)}
+.vmodal-bg{position:fixed;inset:0;background:rgba(15,23,20,.55);display:none;align-items:center;justify-content:center;z-index:500}
+.vmodal-bg.show{display:flex}
+.vmodal-card{background:#fff;border-radius:18px;padding:24px;width:440px;max-width:92vw;max-height:88vh;overflow-y:auto}
 @media(max-width:1200px){.board{grid-template-columns:repeat(2,1fr)}.stats{display:none}.dash-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -84,10 +91,9 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
     <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
     <h1>Admin Panel</h1><div class="role-tag">Cafeteria Green · Counter &amp; kitchen</div>
     <div class="login-err" id="err"></div>
-    <div class="field"><label>Email</label><input id="email" type="email" value="admin@cafeteriagrean.in"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@cafeteriagrean.in"></div>
     <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
     <button class="btn block" id="loginBtn" onclick="doLogin()">Log in</button>
-    <div class="login-hint">Demo: <b>admin@cafeteriagrean.in</b> · password <b>CafeGreen@2026</b></div>
   </div>
 </div>
 
@@ -98,6 +104,8 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
     <nav class="sb-nav" id="nav">
       <button data-view="live" class="sel">🟢 Live Orders</button>
       <button data-view="menu">📋 Menu Manager</button>
+      <button data-view="staff">🛵 Delivery Staff</button>
+      <button data-view="share">💸 Developer Share</button>
       <button data-view="dash">📊 Dashboard</button>
     </nav>
     <div class="sb-foot"><div class="clock" id="clock">--:--:--</div><div class="role" id="who">Counter Staff</div><button class="logout" onclick="logout()">Log out</button></div>
@@ -121,9 +129,41 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
         </div>
       </div>
       <div class="view" id="view-menu"><div class="addbar" id="addbar"></div><div id="mmWrap"></div></div>
+      <div class="view" id="view-staff">
+        <div class="card" style="margin-bottom:16px;max-width:640px"><h3 style="margin-bottom:10px">Add a delivery person</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Full name</label><input id="dpName" placeholder="e.g. Sunil Verma"></div>
+            <div class="field"><label>Contact number</label><input id="dpPhone" inputmode="tel" placeholder="10-digit mobile"></div>
+            <div class="field"><label>Login email</label><input id="dpEmail" type="email" placeholder="sunil@cafeteriagrean.in"></div>
+            <div class="field"><label>Temporary password</label><input id="dpPass" placeholder="min 6 characters"></div>
+          </div>
+          <button class="btn" onclick="createStaff()">Create delivery account</button>
+          <div class="muted" style="font-size:12px;margin-top:8px">Share the email + password with the delivery person so they can log in at <b>/delivery.html</b>.</div>
+        </div>
+        <h3 style="margin-bottom:10px">Delivery team</h3>
+        <div id="staffList"></div>
+      </div>
+      <div class="view" id="view-share">
+        <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Developer share — 15% of menu price</h3>
+          <div class="muted" style="font-size:13px">The platform / developer earns <b>15%</b> of every item's listed price; the restaurant keeps the remaining <b>85%</b>. This applies to each item below.</div></div>
+        <div id="shareWrap"></div>
+        <div class="section-head" style="margin:24px 0 12px"><div><h3>Order-wise developer share</h3><div class="sub" style="margin:0">Every order's split, for transparency · newest first</div></div>
+          <button class="btn sm dark" onclick="exportShareCSV()">⬇ Export CSV</button></div>
+        <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="shareLog"></table></div>
+      </div>
       <div class="view" id="view-dash"><div class="dash-grid" id="dashKpis"></div><div class="card" id="dashOutstanding"></div></div>
     </div>
   </main>
+</div>
+
+<div class="vmodal-bg" id="varModal">
+  <div class="vmodal-card">
+    <h3 id="veTitle" style="margin-bottom:4px">Options</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:14px">Add the sizes/options a customer can pick (e.g. Pint, Bucket). Each has its own price. Leave empty to make it a single-price item.</div>
+    <div id="veRows"></div>
+    <button class="btn sm soft" onclick="veAdd()" style="margin-bottom:16px">+ Add option</button>
+    <div style="display:flex;gap:10px"><button class="btn ghost" style="flex:1" onclick="closeVarEditor()">Cancel</button><button class="btn" style="flex:1" onclick="saveVariants()">Save options</button></div>
+  </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -146,7 +186,11 @@ function enterApp(){
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   $('#who').textContent = api.user?.name || 'Counter Staff';
   setInterval(()=>{ $('#clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false}); },1000);
-  socket = api.connectSocket({ 'order:new': ()=>{ toast('New order received!'); refresh(); } });
+  socket = api.connectSocket({
+    'order:new': ()=>{ toast('New order received!'); refresh(); },
+    'order:ready_for_assign': ()=>{ toast('An order is ready — assign delivery'); refresh(); },
+    'order:status_changed': ()=>refresh(),
+  });
   loadDeliveryPersons();
   refresh();
   pollTimer=setInterval(refresh, 5000);
@@ -158,6 +202,8 @@ $('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(
   $('#view-'+currentView).classList.add('active');
   $('#title').textContent=b.textContent.trim().replace(/^\S+\s/,'');
   if(currentView==='menu') loadMenuMgr();
+  if(currentView==='staff') loadStaff();
+  if(currentView==='share') loadShare();
   if(currentView==='dash') loadDash();
 });
 
@@ -196,15 +242,16 @@ function card(o, col){
   const flash = !seen.has(o.id)?'flash':'';
   let mid='', actions='';
   const addr = `<div class="oc-addr">📍 ${o.delivery.building} · ${o.delivery.floorSeat}<br>${o.delivery.name} · ${o.delivery.phone}</div>`;
+  const spec = o.specialRequest ? `<div class="txn" style="background:oklch(0.96 0.05 75);color:var(--bean)">⚠ ${o.specialRequest}</div>` : '';
   if(col==='verify'){
-    mid = `<div class="txn">Txn ID: ${o.payment.transactionId||'—'}</div>` + addr;
+    mid = `<div class="txn">Txn ID: ${o.payment.transactionId||'—'}</div>` + spec + addr;
     actions = `<div class="row-actions"><button class="btn sm danger" onclick="cancelOrder('${o.id}')">Reject</button><button class="btn sm" onclick="confirmPay('${o.id}')">Confirm Payment</button></div>`;
   } else if(col==='accepted'){
-    mid = addr;
-    actions = `<button class="btn sm block" onclick="act('${o.id}','prepare')">Start Preparing →</button>`;
+    mid = spec + addr;
+    actions = `<div class="prep-note">🍳 Sent to kitchen…</div>`;
   } else if(col==='preparing'){
-    mid = addr;
-    actions = `<button class="btn sm block" onclick="act('${o.id}','ready')">Mark Ready →</button>`;
+    mid = spec + addr;
+    actions = `<div class="prep-note">🍳 Kitchen is preparing…</div>`;
   } else if(col==='ready'){
     mid = addr;
     if(o.assignedDelivery){ mid += `<div class="assigned">✓ Assigned to ${o.assignedDelivery.name}</div>`; }
@@ -233,21 +280,28 @@ async function cancelOrder(id){
 }
 
 /* ---------- MENU MANAGER ---------- */
+let MENU_ITEMS = [];
 async function loadMenuMgr(){
   $('#addbar').innerHTML = `
     <div class="field"><label>Name</label><input id="niName" placeholder="Dish name"></div>
     <div class="field"><label>Category</label><input id="niCat" placeholder="e.g. Snacks"></div>
+    <div class="field"><label>Section</label><select id="niSection"><option value="Food">Food</option><option value="Bar">Bar</option></select></div>
     <div class="field"><label>Price ₹</label><input id="niPrice" type="number" style="width:90px"></div>
     <button class="btn sm" onclick="addItem()">+ Add item</button>`;
   try{
-    const items = await api.get('/menu/all');
-    const cats={}; items.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
-    let html='<table class="mm"><tr><th>Item</th><th>Price (₹)</th><th>Available</th></tr>';
+    MENU_ITEMS = await api.get('/menu/all');
+    const cats={}; MENU_ITEMS.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
+    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>Sizes / options</th><th>Available</th></tr>';
     Object.keys(cats).forEach(cat=>{
-      html += `<tr><td colspan="3" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
+        const nVar = (it.variants||[]).length;
         html += `<tr><td>${it.name}</td>
-          <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)"></td>
+          <td><select class="mm-price" style="width:84px" onchange="updateSection('${it.id}',this.value)">
+            <option value="Food" ${it.section!=='Bar'?'selected':''}>Food</option>
+            <option value="Bar" ${it.section==='Bar'?'selected':''}>Bar</option></select></td>
+          <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)" ${nVar?'disabled title="priced by size"':''}></td>
+          <td><button class="btn sm soft" onclick="openVarEditor('${it.id}')">${nVar?nVar+' option'+(nVar>1?'s':''):'+ add'}</button></td>
           <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td></tr>`;
       });
     });
@@ -255,11 +309,124 @@ async function loadMenuMgr(){
   }catch(e){ $('#mmWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
 }
 async function updatePrice(id,val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
+async function updateSection(id,val){ try{ await api.put('/menu/'+id,{section:val}); toast('Section updated'); }catch(e){ toast(e.message); } }
 async function toggleAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); }catch(e){ toast(e.message); } }
 async function addItem(){
-  const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), price=parseFloat($('#niPrice').value);
+  const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), section=$('#niSection').value, price=parseFloat($('#niPrice').value);
   if(!name||!category||!price){ toast('Fill name, category, price'); return; }
-  try{ await api.post('/menu',{name,category,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
+  try{ await api.post('/menu',{name,category,section,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
+}
+
+/* ---- variant (size/option) editor ---- */
+let varEditId=null, varRows=[];
+function openVarEditor(id){
+  varEditId=id;
+  const it=MENU_ITEMS.find(x=>x.id===id);
+  varRows = (it.variants||[]).map(v=>({name:v.name, price:v.price}));
+  if(!varRows.length) varRows=[{name:'',price:''}];
+  $('#veTitle').textContent = 'Options · '+it.name;
+  renderVarRows();
+  $('#varModal').classList.add('show');
+}
+function renderVarRows(){
+  $('#veRows').innerHTML = varRows.map((r,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px">
+    <input placeholder="Size / option (e.g. Pint)" value="${(r.name||'').replace(/"/g,'&quot;')}" oninput="veSet(${i},'name',this.value)" style="flex:1;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px">
+    <input type="number" placeholder="₹" value="${r.price}" oninput="veSet(${i},'price',this.value)" style="width:90px;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px">
+    <button class="btn sm danger" onclick="veDel(${i})">✕</button></div>`).join('');
+}
+function veSet(i,k,v){ varRows[i][k]=v; }
+function veDel(i){ varRows.splice(i,1); if(!varRows.length) varRows=[{name:'',price:''}]; renderVarRows(); }
+function veAdd(){ varRows.push({name:'',price:''}); renderVarRows(); }
+function closeVarEditor(){ $('#varModal').classList.remove('show'); varEditId=null; }
+async function saveVariants(){
+  const variants = varRows.map(r=>({name:String(r.name||'').trim(), price:parseFloat(r.price)}))
+    .filter(r=>r.name && !isNaN(r.price) && r.price>0);
+  try{
+    await api.put('/menu/'+varEditId,{ variants });
+    toast(variants.length?`${variants.length} option(s) saved`:'Options cleared');
+    closeVarEditor(); loadMenuMgr();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- DELIVERY STAFF ---------- */
+async function loadStaff(){
+  try{
+    const people = await api.get('/admin/delivery-persons');
+    $('#staffList').innerHTML = people.length ? people.map(p=>`
+      <div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:10px;max-width:640px">
+        <div style="width:42px;height:42px;border-radius:50%;background:var(--leaf-bg);color:var(--leaf-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:Bricolage Grotesque">${p.name.split(' ').map(s=>s[0]).join('').slice(0,2)}</div>
+        <div style="flex:1"><div style="font-weight:700">${p.name}</div><div class="muted" style="font-size:13px">📞 ${p.phone}</div></div>
+        <span class="sbadge ${p.activeOrders?'s-out_for_delivery':'s-delivered'}">${p.activeOrders?p.activeOrders+' active':'available'}</span>
+      </div>`).join('') : '<div class="muted">No delivery staff yet. Add one above.</div>';
+  }catch(e){ $('#staffList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function createStaff(){
+  const name=$('#dpName').value.trim(), phone=$('#dpPhone').value.trim(), email=$('#dpEmail').value.trim(), password=$('#dpPass').value;
+  if(!name||!phone||!email||!password){ toast('Fill name, contact number, email and password'); return; }
+  try{
+    await api.post('/admin/delivery-persons',{ name, phone, email, password });
+    toast(name+' added to the delivery team');
+    $('#dpName').value=''; $('#dpPhone').value=''; $('#dpEmail').value=''; $('#dpPass').value='';
+    loadStaff(); loadDeliveryPersons();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- DEVELOPER SHARE (15% of each item's price) ---------- */
+const DEV_RATE = 0.15;
+async function loadShare(){
+  try{
+    const items = await api.get('/menu/all');
+    const cats={}; items.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
+    let tBase=0, tVis=0, tRest=0, tNet=0;
+    let html='<table class="mm"><tr><th>Item</th><th>Base price</th><th>Visible price</th><th>Restaurant (85%)</th><th>Developer share</th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(it=>{
+        const disc = it.developerDiscount || 0;
+        const vis = (it.visiblePrice!=null) ? it.visiblePrice : it.price - disc;
+        const rest = it.price*(1-DEV_RATE);
+        const net = it.price*DEV_RATE - disc;   // 15% − discount
+        tBase+=it.price; tVis+=vis; tRest+=rest; tNet+=net;
+        const visCell = disc>0 ? `<span style="text-decoration:line-through;color:var(--ink-faint)">${rupee(it.price)}</span> ${rupee(vis)}` : rupee(vis);
+        html += `<tr><td>${it.name}${it.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
+          <td>${rupee(it.price)}</td><td>${visCell}</td><td>${rupee(rest)}</td>
+          <td style="color:var(--bean);font-weight:700">${rupee(net)}${disc>0?` <span class="muted" style="font-weight:400">(15% − ${rupee(disc)})</span>`:''}</td></tr>`;
+      });
+    });
+    html += `<tr style="border-top:2px solid var(--line)"><td style="font-weight:700">Total (all items)</td>
+      <td style="font-weight:700">${rupee(tBase)}</td><td style="font-weight:700">${rupee(tVis)}</td>
+      <td style="font-weight:700">${rupee(tRest)}</td><td style="font-weight:700;color:var(--bean)">${rupee(tNet)}</td></tr>`;
+    html += '</table>';
+    $('#shareWrap').innerHTML = html;
+  }catch(e){ $('#shareWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
+  loadShareLog();
+}
+let SHARE_ORDERS=[];
+async function loadShareLog(){
+  try{
+    const data = await api.get('/admin/orders?limit=200');
+    SHARE_ORDERS = data.orders;
+    let totPaid=0, totRest=0, totDev=0;
+    let html='<tr><th>Order</th><th>Date</th><th>Status</th><th>Customer paid</th><th>Restaurant (85%)</th><th>Developer share (15% net)</th></tr>';
+    html += SHARE_ORDERS.map(o=>{
+      const f=o.financials; totPaid+=f.customerPays; totRest+=f.restaurantShare; totDev+=f.platformEarnings;
+      const d=new Date(o.timestamps.created).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<tr><td><b>#${o.orderNumber}</b></td><td>${d}</td><td><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]||o.status}</span></td>
+        <td>${rupee(f.customerPays)}</td><td>${rupee(f.restaurantShare)}</td>
+        <td style="color:var(--bean);font-weight:700">${rupee(f.platformEarnings)}</td></tr>`;
+    }).join('');
+    html += `<tr style="border-top:2px solid var(--line)"><td colspan="3" style="font-weight:700">Total · ${SHARE_ORDERS.length} orders</td>
+      <td style="font-weight:700">${rupee(totPaid)}</td><td style="font-weight:700">${rupee(totRest)}</td>
+      <td style="font-weight:700;color:var(--bean)">${rupee(totDev)}</td></tr>`;
+    $('#shareLog').innerHTML = html;
+  }catch(e){ $('#shareLog').innerHTML='<tr><td>'+e.message+'</td></tr>'; }
+}
+function exportShareCSV(){
+  const rows=[['Order','Date','Status','CustomerPaid','RestaurantShare','DeveloperShare']];
+  SHARE_ORDERS.forEach(o=>rows.push([o.orderNumber,new Date(o.timestamps.created).toISOString(),o.status,o.financials.customerPays,o.financials.restaurantShare,o.financials.platformEarnings]));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='developer-share-log.csv'; a.click(); URL.revokeObjectURL(url); toast('CSV exported');
 }
 
 /* ---------- DASHBOARD ---------- */

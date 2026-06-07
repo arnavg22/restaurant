@@ -57,10 +57,9 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
     <div class="lm" style="background:var(--slate)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13 6l-2 12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h1>Developer Console</h1><div class="role-tag">Cafeteria Green · Platform analytics</div>
     <div class="login-err" id="err"></div>
-    <div class="field"><label>Email</label><input id="email" type="email" value="dev@cafeteriagrean.in"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@cafeteriagrean.in"></div>
     <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
     <button class="btn block dark" id="loginBtn" onclick="doLogin()">Log in</button>
-    <div class="login-hint">Demo: <b>dev@cafeteriagrean.in</b> · password <b>CafeGreen@2026</b></div>
   </div>
 </div>
 
@@ -73,8 +72,9 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
   <div class="wrap">
     <div class="tabs" id="tabs">
       <button data-view="overview" class="sel">Overview</button>
+      <button data-view="pricing">Pricing &amp; Discounts</button>
       <button data-view="orders">Order Log</button>
-      <button data-view="deals">Deals</button>
+      <button data-view="deals">Discount Schemes</button>
     </div>
 
     <div class="view active" id="view-overview">
@@ -85,23 +85,29 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
       </div>
     </div>
 
+    <div class="view" id="view-pricing">
+      <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Customer-visible pricing</h3>
+        <div class="muted" style="font-size:13px">You control the price customers see by discounting out of your <b>15% share</b>. Restaurant always keeps 85% of the base price. <b>Visible price = base − your discount</b>; <b>your net share = 15% − discount</b>.</div></div>
+      <div class="card logwrap"><table class="log" id="pricingTable"></table></div>
+    </div>
+
     <div class="view" id="view-orders">
       <div class="card"><div class="section-head"><h3>Full Order Log</h3><button class="btn sm dark" onclick="exportCSV()">⬇ Export CSV</button></div>
         <div class="logwrap"><table class="log" id="logTable"></table></div></div>
     </div>
 
     <div class="view" id="view-deals">
-      <div class="card"><h3>Create deal <span class="muted" style="font-weight:400;font-size:12px">(discount comes from your 15% share)</span></h3>
+      <div class="card"><h3>New discount scheme <span class="muted" style="font-weight:400;font-size:12px">(applies to the whole order; discount comes from your 15% share)</span></h3>
         <div class="dealform">
-          <div class="field full"><label>Title</label><input id="dlTitle" placeholder="e.g. ₹40 off above ₹250"></div>
-          <div class="field"><label>Type</label><select id="dlType"><option value="flat">Flat ₹</option><option value="percent">Percent %</option></select></div>
-          <div class="field"><label>Value</label><input id="dlValue" type="number" placeholder="40 or 10"></div>
-          <div class="field"><label>Min order ₹</label><input id="dlMin" type="number" value="0"></div>
-          <div class="field"><label>Max discount ₹ (percent only)</label><input id="dlMax" type="number" placeholder="optional"></div>
-          <div class="field"><label>Expires</label><input id="dlExp" type="date"></div>
-          <div class="field"><label>Max uses / user</label><input id="dlPerUser" type="number" value="1"></div>
+          <div class="field"><label>Discount type</label><select id="dlType" onchange="dlTypeChanged()"><option value="flat">Flat amount (₹)</option><option value="percent">Percentage (%)</option></select></div>
+          <div class="field"><label id="dlValueLabel">Amount off (₹)</label><input id="dlValue" type="number" placeholder="e.g. 40"></div>
+          <div class="field"><label>Minimum order value (₹)</label><input id="dlMin" type="number" value="0" placeholder="e.g. 250"></div>
+          <div class="field"><label>Max discount cap (₹) <span class="muted">percent only</span></label><input id="dlMax" type="number" placeholder="optional" disabled></div>
+          <div class="field"><label>Expires on</label><input id="dlExp" type="date"></div>
+          <div class="field"><label>Max uses per customer</label><input id="dlPerUser" type="number" value="1"></div>
+          <div class="field full"><label>Title <span class="muted">(optional — auto-generated if blank)</span></label><input id="dlTitle" placeholder="e.g. ₹40 off above ₹250"></div>
         </div>
-        <button class="btn" onclick="createDeal()">Create deal</button>
+        <button class="btn" onclick="createDeal()">Create scheme</button>
       </div>
       <div style="margin-top:18px" id="dealList"></div>
     </div>
@@ -137,6 +143,7 @@ $('#tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#view-'+currentView).classList.add('active');
   if(currentView==='deals') loadDeals();
+  if(currentView==='pricing') loadPricing();
 });
 
 async function refresh(){
@@ -182,28 +189,83 @@ function exportCSV(){
   const a=document.createElement('a'); a.href=url; a.download='cafeteria-green-orders.csv'; a.click(); URL.revokeObjectURL(url); toast('CSV exported');
 }
 
+/* ---------- PRICING & DISCOUNTS ---------- */
+async function loadPricing(){
+  try{
+    const rows = await api.get('/dev/pricing');
+    const cats={}; rows.forEach(r=>{ (cats[r.category]=cats[r.category]||[]).push(r); });
+    let html='<tr><th>Item</th><th>Base price</th><th>Restaurant (85%)</th><th>Your discount (₹)</th><th>Visible price</th><th>Your net share</th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="6" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(r=>{
+        html += `<tr id="prow-${r.id}"><td>${r.name}${r.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
+          <td>${rupee(r.basePrice)}</td><td>${rupee(r.restaurantShare)}</td>
+          <td><input type="number" min="0" max="${r.maxDiscount}" step="1" value="${r.developerDiscount}" id="disc-${r.id}"
+                 oninput="previewPricing('${r.id}',${r.basePrice})" style="width:80px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px"
+                 onchange="saveDiscount('${r.id}')">
+               <div class="muted" style="font-size:10px">max ${rupee(r.maxDiscount)}</div></td>
+          <td id="vis-${r.id}" style="font-weight:700">${rupee(r.visiblePrice)}</td>
+          <td id="net-${r.id}" style="color:var(--citrus);font-weight:700;background:var(--slate)">${rupee(r.developerNetShare)}</td></tr>`;
+      });
+    });
+    $('#pricingTable').innerHTML = html;
+  }catch(e){ $('#pricingTable').innerHTML='<tr><td>'+e.message+'</td></tr>'; }
+}
+function previewPricing(id, base){
+  const d = Math.max(0, parseFloat($('#disc-'+id).value)||0);
+  $('#vis-'+id).textContent = rupee(base - d);
+  $('#net-'+id).textContent = rupee(base*0.15 - d);
+}
+async function saveDiscount(id){
+  const developerDiscount = parseFloat($('#disc-'+id).value)||0;
+  try{
+    const r = await api.patch('/dev/pricing/'+id, { developerDiscount });
+    $('#disc-'+id).value = r.developerDiscount;
+    $('#vis-'+id).textContent = rupee(r.visiblePrice);
+    $('#net-'+id).textContent = rupee(r.developerNetShare);
+    toast('Saved · customers now pay '+rupee(r.visiblePrice));
+  }catch(e){ toast(e.message); loadPricing(); }
+}
+
+function dlTypeChanged(){
+  const isPercent = $('#dlType').value==='percent';
+  $('#dlValueLabel').textContent = isPercent ? 'Percentage off (%)' : 'Amount off (₹)';
+  $('#dlValue').placeholder = isPercent ? 'e.g. 10' : 'e.g. 40';
+  $('#dlMax').disabled = !isPercent;
+  if(!isPercent) $('#dlMax').value = '';
+}
+function autoTitle(type, value, min){
+  return type==='flat' ? `₹${value} off over ₹${min}` : `${value}% off over ₹${min}`;
+}
 async function loadDeals(){
   try{
     const deals = await api.get('/dev/deals');
-    $('#dealList').innerHTML = deals.length? deals.map(d=>`
-      <div class="deal ${d.isActive?'':'off'}"><div class="deal-h"><div>
-        <b>${d.title}</b><div class="meta">${d.discountType==='flat'?rupee(d.discountValue)+' off':d.discountValue+'% off'}${d.maxDiscountAmount?' (max '+rupee(d.maxDiscountAmount)+')':''} · min ${rupee(d.minOrderAmount)} · used ${d.totalUsages||0}×</div>
+    const active = deals.filter(d=>d.isActive), inactive = deals.filter(d=>!d.isActive);
+    const row = (d)=>`<div class="deal ${d.isActive?'':'off'}"><div class="deal-h"><div>
+        <b>${d.title}</b><div class="meta">${d.discountType==='flat'?rupee(d.discountValue)+' off':d.discountValue+'% off'}${d.maxDiscountAmount?' (max '+rupee(d.maxDiscountAmount)+')':''} · min order ${rupee(d.minOrderAmount)} · used ${d.totalUsages||0}×</div>
         <div class="meta">Expires ${new Date(d.expiresAt).toLocaleDateString('en-IN')}</div></div>
-        ${d.isActive?`<button class="btn sm danger" onclick="deactivate('${d.id}')">Deactivate</button>`:'<span class="sbadge s-cancelled">Inactive</span>'}
-      </div></div>`).join('') : '<div class="muted card">No deals yet.</div>';
+        ${d.isActive?`<button class="btn sm danger" onclick="deactivate('${d.id}')">Deactivate</button>`:`<button class="btn sm soft" onclick="reactivate('${d.id}')">Reactivate</button>`}
+      </div></div>`;
+    $('#dealList').innerHTML =
+      `<h3 style="margin:8px 0 10px">Active schemes (${active.length})</h3>` +
+      (active.length? active.map(row).join('') : '<div class="muted card">No active schemes.</div>') +
+      (inactive.length? `<h3 style="margin:18px 0 10px">Inactive (${inactive.length})</h3>`+inactive.map(row).join('') : '');
   }catch(e){ $('#dealList').innerHTML='<div class="empty">'+e.message+'</div>'; }
 }
 async function createDeal(){
-  const title=$('#dlTitle').value.trim(), discountType=$('#dlType').value, discountValue=parseFloat($('#dlValue').value);
+  const discountType=$('#dlType').value, discountValue=parseFloat($('#dlValue').value);
   const minOrderAmount=parseFloat($('#dlMin').value)||0, maxDiscountAmount=$('#dlMax').value?parseFloat($('#dlMax').value):null;
   const exp=$('#dlExp').value, maxUsesPerUser=parseInt($('#dlPerUser').value)||1;
-  if(!title||!discountValue||!exp){ toast('Fill title, value and expiry'); return; }
+  const title=$('#dlTitle').value.trim() || autoTitle(discountType, discountValue, minOrderAmount);
+  if(!discountValue||!exp){ toast('Enter a value and expiry date'); return; }
+  if(discountType==='percent' && (discountValue<=0||discountValue>100)){ toast('Percentage must be 1–100'); return; }
   try{
     await api.post('/dev/deals',{ title, discountType, discountValue, minOrderAmount, maxDiscountAmount, maxUsesPerUser, expiresAt:new Date(exp+'T23:59:59').toISOString() });
-    toast('Deal created'); $('#dlTitle').value=''; $('#dlValue').value=''; loadDeals();
+    toast('Scheme created'); $('#dlTitle').value=''; $('#dlValue').value=''; $('#dlMax').value=''; loadDeals();
   }catch(e){ toast(e.message); }
 }
 async function deactivate(id){ try{ await api.patch('/dev/deals/'+id+'/deactivate'); toast('Deactivated'); loadDeals(); }catch(e){ toast(e.message); } }
+async function reactivate(id){ try{ await api.put('/dev/deals/'+id, { isActive:true }); toast('Reactivated'); loadDeals(); }catch(e){ toast(e.message); } }
 
 if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
 </script>

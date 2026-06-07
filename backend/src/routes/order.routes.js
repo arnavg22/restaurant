@@ -26,7 +26,7 @@ import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateDeliveryInfo } from '../services/orderService.js';
-import { calculateDealDiscount, calculateOrderFinancials } from '../services/orderService.js';
+import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine } from '../services/orderService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -68,19 +68,25 @@ async function computeCartTotal(items, dealCode, userId) {
         const missing = menuItemIds.filter(id => !found.has(id));
         throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
     }
-    const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
-    let subtotal = 0;
-    for (const item of items) subtotal += priceMap.get(item.menuItemId) * item.quantity;
+    const itemMap = new Map(menuItems.map(m => [m.id, m]));
+    let subtotal = 0, devDiscount = 0;
+    for (const item of items) {
+        const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
+        subtotal += line.unitPrice * item.quantity;
+        devDiscount += line.devDiscount * item.quantity;
+    }
     subtotal = Math.round(subtotal * 100) / 100;
+    devDiscount = Math.round(devDiscount * 100) / 100;
 
-    let discount = 0;
+    let dealDiscount = 0;
     if (dealCode) {
         const deal = await prisma.deal.findFirst({
             where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
         });
-        if (deal) discount = calculateDealDiscount(deal, subtotal, userId);
+        if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId);
     }
-    return calculateOrderFinancials(subtotal, discount);
+    // Both developer per-item discounts and deals come out of the platform's 15% share
+    return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100);
 }
 
 // All routes require customer authentication
@@ -286,7 +292,7 @@ router.post('/preview', async (req, res, next) => {
  */
 router.post('/', async (req, res, next) => {
     try {
-        const { items, delivery, dealCode, transactionId } = req.body;
+        const { items, delivery, dealCode, transactionId, specialRequest } = req.body;
 
         // ── Pre-check: items must exist ──
         if (!items || items.length === 0) {
@@ -333,30 +339,33 @@ router.post('/', async (req, res, next) => {
             throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
         }
 
-        // ── 3. Calculate subtotal with price snapshot ──
-        const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
-        const nameMap = new Map(menuItems.map(m => [m.id, m.name]));
+        // ── 3. Calculate subtotal with price snapshot (resolves Bar variants) ──
+        const itemMap = new Map(menuItems.map(m => [m.id, m]));
 
         let subtotal = 0;
+        let developerDiscountTotal = 0;
         const orderItems = items.map(item => {
-            const unitPrice = priceMap.get(item.menuItemId);
-            const itemTotal = Math.round(unitPrice * item.quantity * 100) / 100;
+            const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
+            developerDiscountTotal += line.devDiscount * item.quantity;
+            const itemTotal = Math.round(line.unitPrice * item.quantity * 100) / 100;
             subtotal += itemTotal;
 
             return {
                 menuItemId: item.menuItemId,
-                itemName: nameMap.get(item.menuItemId),
+                itemName: line.itemName,
+                variant: line.variant,
                 quantity: item.quantity,
-                unitPrice,
+                unitPrice: line.unitPrice,
                 itemTotal
             };
         });
 
         subtotal = Math.round(subtotal * 100) / 100;
+        developerDiscountTotal = Math.round(developerDiscountTotal * 100) / 100;
 
-        // ── 4. Apply deal if provided ──
+        // ── 4. Apply deal if provided (on top of per-item developer discounts) ──
         let appliedDeal = null;
-        let discountAmount = 0;
+        let dealDiscount = 0;
 
         if (dealCode) {
             appliedDeal = await prisma.deal.findFirst({
@@ -378,15 +387,17 @@ router.post('/', async (req, res, next) => {
                     throw new AppError('Deal usage limit reached', 400, 'DEAL_LIMIT_REACHED');
                 }
 
-                discountAmount = calculateDealDiscount(appliedDeal, subtotal, req.user.id);
+                dealDiscount = calculateDealDiscount(appliedDeal, subtotal, req.user.id);
 
-                if (discountAmount === 0) {
+                if (dealDiscount === 0) {
                     throw new AppError('Deal not applicable to this order', 400, 'DEAL_NOT_APPLICABLE');
                 }
             }
         }
 
         // ── 5. Calculate all financials ──
+        // Both per-item developer discounts and any deal come out of the platform's 15% share.
+        const discountAmount = Math.round((developerDiscountTotal + dealDiscount) * 100) / 100;
         const financials = calculateOrderFinancials(subtotal, discountAmount);
 
         // ── 5b. Generate a human-friendly, unique order number ──
@@ -404,6 +415,7 @@ router.post('/', async (req, res, next) => {
                     buildingName: delivery.buildingName,
                     floorSeat: delivery.floorSeat,
                     deliveryNotes: delivery.deliveryNotes || null,
+                    specialRequest: (specialRequest && String(specialRequest).trim().slice(0, 500)) || null,
                     transactionId: transactionId,
                     ...financials,
                     appliedDealId: appliedDeal?.id || null,
@@ -526,6 +538,7 @@ router.get('/:id', async (req, res, next) => {
             include: {
                 items: true,
                 appliedDeal: { select: { id: true, title: true, discountType: true, discountValue: true } },
+                assignedDelivery: { select: { name: true, phone: true } },
                 logs: {
                     orderBy: { createdAt: 'asc' },
                     select: {
@@ -575,11 +588,14 @@ function formatOrder(order) {
         orderNumber: order.orderNumber,
         status: order.status,
         items: order.items.map(i => ({
+            menuItemId: i.menuItemId,
             name: i.itemName,
+            variant: i.variant,
             quantity: i.quantity,
             unitPrice: parseFloat(i.unitPrice),
             total: parseFloat(i.itemTotal)
         })),
+        specialRequest: order.specialRequest,
         delivery: {
             name: order.deliveryName,
             phone: order.deliveryPhone,
@@ -587,6 +603,10 @@ function formatOrder(order) {
             floorSeat: order.floorSeat,
             notes: order.deliveryNotes
         },
+        // Delivery partner contact — only exposed to the customer once out for delivery
+        deliveryAgent: (order.assignedDelivery && ['out_for_delivery', 'delivered'].includes(order.status))
+            ? { name: order.assignedDelivery.name, phone: order.assignedDelivery.phone }
+            : null,
         financials: {
             subtotal: parseFloat(order.subtotal),
             discountAmount: parseFloat(order.discountAmount),

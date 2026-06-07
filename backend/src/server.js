@@ -12,7 +12,9 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.routes.js';
 import menuRoutes from './routes/menu.routes.js';
 import orderRoutes from './routes/order.routes.js';
+import addressRoutes from './routes/address.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import kitchenRoutes from './routes/kitchen.routes.js';
 import deliveryRoutes from './routes/delivery.routes.js';
 import devRoutes from './routes/dev.routes.js';
 
@@ -74,7 +76,9 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/menu', menuRoutes);
 app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/addresses', addressRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/kitchen', kitchenRoutes);
 app.use('/api/v1/delivery', deliveryRoutes);
 app.use('/api/v1/dev', devRoutes);
 

@@ -19,10 +19,17 @@ export function setupSocketHandlers(io) {
             socket.leave(`order:${orderId}`);
         });
 
-        // ── Admin: subscribe to all new orders ──
+        // ── Admin: subscribe to new orders + kitchen board ──
         if (user.role === 'admin') {
             socket.join('admin_feed');
+            socket.join('kitchen_feed');
             console.log(`[WS] Admin ${user.name} joined admin_feed`);
+        }
+
+        // ── Kitchen: subscribe to accepted orders ──
+        if (user.role === 'kitchen') {
+            socket.join('kitchen_feed');
+            console.log(`[WS] Kitchen ${user.name} joined kitchen_feed`);
         }
 
         // ── Delivery: subscribe to ready orders ──
@@ -34,6 +41,7 @@ export function setupSocketHandlers(io) {
         // ── Developer: can subscribe to all events (read-only) ──
         if (user.role === 'developer') {
             socket.join('admin_feed');      // See new orders
+            socket.join('kitchen_feed');    // See kitchen events
             socket.join('delivery_feed');   // See delivery events
             console.log(`[WS] Developer ${user.name} subscribed to all feeds`);
         }

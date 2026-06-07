@@ -2,6 +2,7 @@
 // ADMIN ROUTES — Restaurant Admin Dashboard
 // ============================================================
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { transitionOrderStatus, cancelOrder } from '../services/orderService.js';
@@ -50,6 +51,37 @@ router.get('/delivery-persons', async (req, res, next) => {
         const loadMap = new Map(active.map(a => [a.assignedDeliveryId, a._count]));
 
         res.json(people.map(p => ({ ...p, activeOrders: loadMap.get(p.id) || 0 })));
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── POST /admin/delivery-persons — create a delivery person account ──
+router.post('/delivery-persons', async (req, res, next) => {
+    try {
+        const { name, phone, email, password } = req.body;
+
+        if (!name || !phone || !email || !password) {
+            throw new AppError('Name, contact number, email and password are all required', 400, 'VALIDATION_ERROR');
+        }
+        const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+        if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+            throw new AppError('Enter a valid 10-digit Indian mobile number', 400, 'VALIDATION_ERROR');
+        }
+        if (String(password).length < 6) {
+            throw new AppError('Password must be at least 6 characters', 400, 'VALIDATION_ERROR');
+        }
+
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) throw new AppError('That email is already registered', 409, 'EMAIL_EXISTS');
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const person = await prisma.user.create({
+            data: { name: name.trim(), email: email.trim().toLowerCase(), phone: cleanPhone, passwordHash, role: 'delivery' },
+            select: { id: true, name: true, email: true, phone: true }
+        });
+
+        res.status(201).json({ ...person, message: 'Delivery person created' });
     } catch (err) {
         next(err);
     }
@@ -127,6 +159,7 @@ router.get('/orders', async (req, res, next) => {
                     floorSeat: o.floorSeat,
                     notes: o.deliveryNotes
                 },
+                specialRequest: o.specialRequest,
                 items: o.items.map(i => ({
                     name: i.itemName,
                     quantity: i.quantity,
@@ -268,6 +301,15 @@ router.patch('/orders/:id/confirm-payment', async (req, res, next) => {
             newStatus: 'accepted',
             message: 'Payment verified! Your order has been accepted.'
         });
+
+        // Push the accepted order to the kitchen feed
+        const io = req.app.get('io');
+        if (io) {
+            io.to('kitchen_feed').emit('order:accepted', {
+                orderId: order.id,
+                orderNumber: order.orderNumber
+            });
+        }
 
         res.json({ message: 'Payment verified and order accepted', order: { id: order.id, status: order.status } });
     } catch (err) {

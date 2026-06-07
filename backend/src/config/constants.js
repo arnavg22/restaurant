@@ -22,9 +22,9 @@ export const STATUS_TRANSITIONS = {
 
 // Who can transition to each status
 export const STATUS_AUTHORIZERS = {
-    accepted:          ['admin'],            // admin manually verifies the UPI transaction ID
-    preparing:         ['admin'],
-    ready:             ['admin'],
+    accepted:          ['admin'],                 // admin manually verifies the UPI transaction ID
+    preparing:         ['admin', 'kitchen'],      // kitchen cooks
+    ready:             ['admin', 'kitchen'],
     out_for_delivery:  ['admin', 'delivery'],
     delivered:         ['delivery'],
     cancelled:         ['admin'],
@@ -35,6 +35,7 @@ export const STATUS_AUTHORIZERS = {
 export const ROLES = {
     CUSTOMER:  'customer',
     ADMIN:     'admin',
+    KITCHEN:   'kitchen',
     DELIVERY:  'delivery',
     DEVELOPER: 'developer'
 };

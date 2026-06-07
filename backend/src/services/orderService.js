@@ -100,6 +100,55 @@ function roundMoney(amount) {
     return Math.round(amount * 100) / 100;
 }
 
+/**
+ * The developer can only discount out of their 15% share, so a per-item
+ * developer discount is clamped to [0, price * PLATFORM_FEE_RATE].
+ */
+export function clampDevDiscount(price, discount) {
+    const p = parseFloat(price) || 0;
+    const d = parseFloat(discount) || 0;
+    return roundMoney(Math.min(Math.max(d, 0), p * PLATFORM_FEE_RATE));
+}
+
+/** Customer-visible price = base price − (clamped) developer discount. */
+export function visiblePrice(price, discount) {
+    return roundMoney((parseFloat(price) || 0) - clampDevDiscount(price, discount));
+}
+
+/** Normalize a MenuItem.variants Json value into a clean [{name, price}] array. */
+export function parseVariants(v) {
+    if (!v) return [];
+    let arr = v;
+    if (typeof v === 'string') { try { arr = JSON.parse(v); } catch { return []; } }
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .filter(x => x && x.name != null && x.price != null && !isNaN(parseFloat(x.price)))
+        .map(x => ({ name: String(x.name).trim(), price: roundMoney(parseFloat(x.price)) }));
+}
+
+/**
+ * Resolve the unit price, display name and (developer) discount for one cart line.
+ * Bar items priced by size MUST specify a valid variant; their developer discount is 0.
+ * Non-variant items use base price minus the per-item developer discount.
+ */
+export function resolveLine(menuItem, variantName) {
+    const variants = parseVariants(menuItem.variants);
+    if (variants.length) {
+        if (!variantName) {
+            throw new AppError(`Please choose an option for ${menuItem.name}`, 400, 'VARIANT_REQUIRED');
+        }
+        const v = variants.find(x => x.name === variantName);
+        if (!v) throw new AppError(`Invalid option for ${menuItem.name}`, 400, 'INVALID_VARIANT');
+        return { unitPrice: v.price, itemName: `${menuItem.name} · ${v.name}`, variant: v.name, devDiscount: 0 };
+    }
+    return {
+        unitPrice: parseFloat(menuItem.price),
+        itemName: menuItem.name,
+        variant: null,
+        devDiscount: clampDevDiscount(menuItem.price, menuItem.developerDiscount)
+    };
+}
+
 
 
 // ============================================================
