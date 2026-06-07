@@ -40,13 +40,16 @@ const prisma = new PrismaClient();
  * │  = subtotal - discount  ✓                           │
  * └────────────────────────────────────────────────────┘
  */
-export function calculateOrderFinancials(subtotal, discountAmount = 0) {
-    // Ensure discount never exceeds what platform can absorb
-    const maxDiscount = subtotal * PLATFORM_FEE_RATE;
+export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0) {
+    // exemptSubtotal = portion of subtotal NOT subject to platform fee (e.g. thali items)
+    const feeableSubtotal = Math.max(0, subtotal - exemptSubtotal);
+
+    // Ensure discount never exceeds what platform can absorb (only from feeable portion)
+    const maxDiscount = feeableSubtotal * PLATFORM_FEE_RATE;
     const cappedDiscount = Math.min(discountAmount, maxDiscount);
 
-    const platformFee = roundMoney(subtotal * PLATFORM_FEE_RATE);
-    const restaurantShare = roundMoney(subtotal * RESTAURANT_SHARE_RATE);
+    const platformFee = roundMoney(feeableSubtotal * PLATFORM_FEE_RATE);
+    const restaurantShare = roundMoney(subtotal - platformFee);
     const customerPays = roundMoney(subtotal - cappedDiscount);
     const platformEarnings = roundMoney(platformFee - cappedDiscount);
     const discountFromPlatform = roundMoney(cappedDiscount);

@@ -31,22 +31,27 @@ router.use(authenticate, authorize('developer'));
 
 const r2 = (n) => Math.round(n * 100) / 100;
 
+// Categories exempt from the 15% platform fee (100% restaurant).
+const EXEMPT_CATEGORIES = ['cafeteria special thali'];
+
 function pricingRow(item) {
     const base = parseFloat(item.price);
-    const discount = clampDevDiscount(item.price, item.developerDiscount);
-    const grossShare = r2(base * PLATFORM_FEE_RATE);      // developer's full 15%
+    const exempt = EXEMPT_CATEGORIES.includes(item.category.toLowerCase());
+    const discount = exempt ? 0 : clampDevDiscount(item.price, item.developerDiscount);
+    const grossShare = exempt ? 0 : r2(base * PLATFORM_FEE_RATE);
     return {
         id: item.id,
         name: item.name,
         category: item.category,
         isAvailable: item.isAvailable,
-        basePrice: base,                                  // restaurant's menu price
-        restaurantShare: r2(base * (1 - PLATFORM_FEE_RATE)), // always 85%
-        developerGrossShare: grossShare,                  // 15% of base
-        maxDiscount: grossShare,                          // can't discount more than the 15%
-        developerDiscount: discount,                      // current discount given to customer
-        visiblePrice: visiblePrice(item.price, item.developerDiscount), // what the customer sees/pays
-        developerNetShare: r2(grossShare - discount)      // 15% − discount = net share per item
+        basePrice: base,
+        restaurantShare: exempt ? base : r2(base * (1 - PLATFORM_FEE_RATE)),
+        developerGrossShare: grossShare,
+        maxDiscount: grossShare,
+        developerDiscount: discount,
+        visiblePrice: exempt ? base : visiblePrice(item.price, item.developerDiscount),
+        developerNetShare: r2(grossShare - discount),
+        exempt
     };
 }
 
@@ -68,6 +73,10 @@ router.patch('/pricing/:id', async (req, res, next) => {
         const { developerDiscount } = req.body;
         const item = await prisma.menuItem.findUnique({ where: { id: req.params.id } });
         if (!item) throw new AppError('Menu item not found', 404, 'NOT_FOUND');
+
+        if (EXEMPT_CATEGORIES.includes(item.category.toLowerCase())) {
+            throw new AppError('This item is exempt from platform fee — discounts are not applicable', 400, 'EXEMPT_ITEM');
+        }
 
         const base = parseFloat(item.price);
         const requested = parseFloat(developerDiscount);

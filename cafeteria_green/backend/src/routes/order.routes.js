@@ -69,14 +69,22 @@ async function computeCartTotal(items, dealCode, userId) {
         throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
     }
     const itemMap = new Map(menuItems.map(m => [m.id, m]));
-    let subtotal = 0, devDiscount = 0;
+    let subtotal = 0, devDiscount = 0, exemptSubtotal = 0;
+    // Categories exempt from the 15% platform fee (100% goes to restaurant)
+    const EXEMPT_CATEGORIES = ['cafeteria special thali'];
     for (const item of items) {
-        const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
-        subtotal += line.unitPrice * item.quantity;
+        const menuItem = itemMap.get(item.menuItemId);
+        const line = resolveLine(menuItem, item.variant);
+        const lineTotal = line.unitPrice * item.quantity;
+        subtotal += lineTotal;
         devDiscount += line.devDiscount * item.quantity;
+        if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
+            exemptSubtotal += lineTotal;
+        }
     }
     subtotal = Math.round(subtotal * 100) / 100;
     devDiscount = Math.round(devDiscount * 100) / 100;
+    exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
 
     let dealDiscount = 0;
     if (dealCode) {
@@ -86,7 +94,7 @@ async function computeCartTotal(items, dealCode, userId) {
         if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId);
     }
     // Both developer per-item discounts and deals come out of the platform's 15% share
-    return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100);
+    return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100, exemptSubtotal);
 }
 
 // All routes require customer authentication
