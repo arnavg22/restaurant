@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Cafeteria Green — Order</title>
+<title>FORCO AMORE — Order</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -142,7 +142,7 @@
     <div class="login-card">
       <div class="lm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div>
       <h1 id="authTitle">Welcome back</h1>
-      <div class="role-tag">Cafeteria Green · Order food to your desk</div>
+      <div class="role-tag">FORCO AMORE · Order food to your desk</div>
       <div class="login-err" id="authErr"></div>
       <div id="loginForm">
         <div class="field"><label>Email</label><input id="liEmail" type="email" placeholder="you@office.com"></div>
@@ -158,7 +158,7 @@
         <button class="btn block" id="regBtn" onclick="doRegister()">Create account &amp; start</button>
         <div class="login-alt">Already have an account? <a onclick="showLogin()">Log in</a></div>
       </div>
-      <div class="powered">Powered by <b>BazaarDeal</b></div>
+      </div>
     </div>
   </div>
 
@@ -166,7 +166,7 @@
   <div class="screen" id="screen-menu">
     <div class="topbar">
       <div class="brand"><svg class="leaf-svg" viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg>
-        <div><b>Cafeteria Green</b><small id="menuHello">Delivery</small></div></div>
+        <div><b>FORCO AMORE</b><small id="menuHello">Delivery</small></div></div>
       <button class="iconbtn" onclick="go('cart')">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="#fff"/><circle cx="18" cy="20" r="1.4" fill="#fff"/></svg>
         <span class="badge" id="cartBadge" style="display:none">0</span>
@@ -321,7 +321,7 @@ function renderMenu(){
         <div class="item-price">${priceHtml}</div></div><div class="add-col" id="add-${it.id}"></div></div>`;
     });
   });
-  html += `<div class="powered">Powered by <b>BazaarDeal</b></div>`;
+  html += ``;
   $('#menuBody').innerHTML = html;
   Object.values(cats).flat().forEach(it=>renderAdd(it));
 }
@@ -509,7 +509,7 @@ async function loadOrders(){
   try{ resp = await api.get('/orders?limit=10'); }catch(e){ $('#ordersBody').innerHTML=`<div class="empty">${e.message}</div>`; return; }
   const orders = resp.orders||[];
   if(!orders.length){ $('#ordersBody').innerHTML=`<div class="empty">No orders yet.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
-  $('#ordersBody').innerHTML = orders.map(orderCard).join('') + `<div class="powered">Powered by <b>BazaarDeal</b></div>`;
+  $('#ordersBody').innerHTML = orders.map(orderCard).join('');
 }
 function orderCard(o){
   const idx = flowIndex(o.status);
