@@ -1,9 +1,4 @@
-# HTTP-only (no domain / no TLS) — for testing. Access via http://<elastic-ip>/
-# When you have a real domain, replace ":80" with the domain (e.g. forco.YOURDOMAIN.com)
-# and Caddy will switch on automatic HTTPS.
-# NOTE: set FRONTEND_URL=http://<elastic-ip> in backend/.env (or remove it) so the
-# Socket.IO origin check accepts connections over plain HTTP.
-:80 {
+3-6-31-151.nip.io {
     encode zstd gzip
 
     # API + realtime WebSocket → Node backend
