@@ -83,6 +83,27 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
 .vmodal-bg.show{display:flex}
 .vmodal-card{background:var(--panel);border-radius:18px;padding:24px;width:440px;max-width:92vw;max-height:88vh;overflow-y:auto}
 @media(max-width:1200px){.board{grid-template-columns:repeat(2,1fr)}.stats{display:none}.dash-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:100;width:250px;transition:left .3s ease;height:100vh}
+  .sidebar.open{left:0}
+  .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sb-overlay.show{display:block}
+  .layout{flex-direction:column}
+  .main{width:100%}
+  .topstrip{padding:12px 16px}
+  .topstrip h2{font-size:16px}
+  .hamburger{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:var(--leaf-bg);color:var(--leaf-deep);font-size:20px;font-weight:700;cursor:pointer;margin-right:12px}
+  .content{padding:14px 14px 60px}
+  .board{grid-template-columns:1fr}
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .addbar{flex-direction:column;align-items:stretch}
+  table.mm{font-size:12px}
+  table.mm td,table.mm th{padding:7px 8px}
+  .col{min-height:auto}
+  .col-head{cursor:pointer;user-select:none}
+  .col-body.collapsed{display:none}
+}
+@media(min-width:769px){.hamburger{display:none}.sb-overlay{display:none!important}}
 </style>
 </head>
 <body>
@@ -102,7 +123,8 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
 
 <!-- APP -->
 <div class="layout hidden" id="app">
-  <aside class="sidebar">
+  <div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
     <div class="sb-brand"><div class="lm"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="leaf-svg"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5z"/></svg></div><div><b>FORCO AMORE</b><small>Admin Panel</small></div></div>
     <nav class="sb-nav" id="nav">
       <button data-view="live" class="sel">🟢 Live Orders</button>
@@ -115,7 +137,7 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
     <div class="sb-foot"><div class="clock" id="clock">--:--:--</div><div class="role" id="who">Counter Staff</div><button class="logout" onclick="logout()">Log out</button></div>
   </aside>
   <main class="main">
-    <div class="topstrip"><h2 id="title">Live Orders</h2>
+    <div class="topstrip"><span class="hamburger" onclick="toggleSidebar()">☰</span><h2 id="title">Live Orders</h2>
       <div class="stats">
         <div class="stat warn"><div class="l">To Verify</div><div class="v" id="sVerify">0</div></div>
         <div class="stat"><div class="l">Active</div><div class="v" id="sActive">0</div></div>
@@ -231,6 +253,8 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
 const { CGApi, rupee, toast, STATUS_LABEL } = CG;
 const api = CGApi('admin');
 const $ = s=>document.querySelector(s);
+function toggleSidebar(){ $('#sidebar').classList.toggle('open'); $('#sbOverlay').classList.toggle('show'); }
+function closeSidebar(){ $('#sidebar').classList.remove('open'); $('#sbOverlay').classList.remove('show'); }
 let ORDERS=[], DELIVERY_PERSONS=[], seen=new Set(), currentView='live', socket=null, pollTimer=null;
 
 function doLogin(){
@@ -255,7 +279,7 @@ function enterApp(){
   pollTimer=setInterval(refresh, 5000);
 }
 
-$('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return; currentView=b.dataset.view;
+$('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return; currentView=b.dataset.view; closeSidebar();
   $('#nav').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#view-'+currentView).classList.add('active');
@@ -301,6 +325,10 @@ function renderBoard(){
   const todayRev = ORDERS.filter(o=>o.payment.paidAt).reduce((s,o)=>s+o.financials.customerPays,0);
   $('#sRev').textContent = rupee(todayRev);
   seen = new Set(ORDERS.map(o=>o.id));
+  // Make column headers collapsible on mobile
+  document.querySelectorAll('.col-head').forEach(h=>{
+    h.onclick = ()=>{ const body=h.nextElementSibling; if(body) body.classList.toggle('collapsed'); };
+  });
 }
 function itemsText(o){ return o.items.map(i=>`${i.quantity}× ${i.name}`).join(', '); }
 function card(o, col){
