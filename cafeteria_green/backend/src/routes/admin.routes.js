@@ -274,6 +274,9 @@ router.get('/orders', async (req, res, next) => {
                 id: o.id,
                 orderNumber: o.orderNumber,
                 status: o.status,
+                orderType: o.orderType || 'DELIVERY',
+                paymentMethod: o.paymentMethod || 'ONLINE',
+                tableNumber: o.tableNumber || null,
                 customer: {
                     id: o.user.id,
                     name: o.user.name,
@@ -608,6 +611,29 @@ router.patch('/orders/:id/cancel', async (req, res, next) => {
             order: { id: order.id, status: order.status },
             refundInitiated: order.paymentVerified
         });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── PATCH /admin/orders/:id/complete — Mark dine-in/takeaway as completed ──
+router.patch('/orders/:id/complete', async (req, res, next) => {
+    try {
+        const order = await transitionOrderStatus(req.params.id, {
+            newStatus: 'completed',
+            changedBy: req.user.id,
+            changedByRole: ROLES.ADMIN,
+            notes: req.body.notes || 'Order completed'
+        });
+
+        emitToCustomer(req, order.id, 'order:status_changed', {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            newStatus: 'completed',
+            message: 'Your order is complete!'
+        });
+
+        res.json({ message: 'Order completed', order: { id: order.id, status: order.status } });
     } catch (err) {
         next(err);
     }

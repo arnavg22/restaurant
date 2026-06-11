@@ -33,7 +33,7 @@
 .stat.warn{background:oklch(0.96 0.05 75)} .stat.warn .v{color:var(--bean)}
 .content{padding:22px 26px 60px;flex:1}
 .view{display:none}.view.active{display:block}
-.board{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:14px;align-items:start}
 .col{background:var(--panel-2);border-radius:14px;overflow:hidden;min-height:120px}
 .col-head{padding:11px 14px;color:#fff;font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center}
 .col-head .cnt{background:rgba(255,255,255,.3);border-radius:20px;padding:0 9px;font-size:12px}
@@ -41,6 +41,8 @@
 .col.accepted .col-head{background:var(--leaf)}
 .col.preparing .col-head{background:var(--leaf-deep)}
 .col.ready .col-head{background:var(--blue)}
+.col.ready-pickup .col-head{background:oklch(0.55 0.12 310)}
+.col.served .col-head{background:oklch(0.55 0.13 170)}
 .col.ofd .col-head{background:oklch(0.50 0.13 230)}
 .col-body{padding:10px;display:flex;flex-direction:column;gap:10px}
 .ocard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -150,7 +152,9 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
           <div class="col verify"><div class="col-head">To Verify <span class="cnt" id="c-verify">0</span></div><div class="col-body" id="col-verify"></div></div>
           <div class="col accepted"><div class="col-head">Accepted <span class="cnt" id="c-accepted">0</span></div><div class="col-body" id="col-accepted"></div></div>
           <div class="col preparing"><div class="col-head">Preparing <span class="cnt" id="c-preparing">0</span></div><div class="col-body" id="col-preparing"></div></div>
-          <div class="col ready"><div class="col-head">Ready <span class="cnt" id="c-ready">0</span></div><div class="col-body" id="col-ready"></div></div>
+          <div class="col ready"><div class="col-head">Ready (Delivery) <span class="cnt" id="c-ready">0</span></div><div class="col-body" id="col-ready"></div></div>
+          <div class="col ready-pickup"><div class="col-head">Ready (Pickup) <span class="cnt" id="c-ready-pickup">0</span></div><div class="col-body" id="col-ready-pickup"></div></div>
+          <div class="col served"><div class="col-head">Served (Dine-in) <span class="cnt" id="c-served">0</span></div><div class="col-body" id="col-served"></div></div>
           <div class="col ofd"><div class="col-head">Out for Delivery <span class="cnt" id="c-ofd">0</span></div><div class="col-body" id="col-ofd"></div></div>
         </div>
       </div>
@@ -317,12 +321,16 @@ async function refresh(){
 function elapsed(ts){ const m=Math.floor((Date.now()-new Date(ts))/60000); return m<1?'just now':m+' min ago'; }
 
 function renderBoard(){
-  const groups={ verify:[], accepted:[], preparing:[], ready:[], ofd:[] };
+  const groups={ verify:[], accepted:[], preparing:[], ready:[], 'ready-pickup':[], served:[], ofd:[] };
   ORDERS.forEach(o=>{
     if(o.status==='payment_verification_pending') groups.verify.push(o);
     else if(o.status==='accepted') groups.accepted.push(o);
     else if(o.status==='preparing') groups.preparing.push(o);
-    else if(o.status==='ready') groups.ready.push(o);
+    else if(o.status==='ready') {
+      if(o.orderType === 'DELIVERY') groups.ready.push(o);
+      else if(o.orderType === 'TAKEAWAY') groups['ready-pickup'].push(o);
+      else if(o.orderType === 'DINE_IN') groups.served.push(o);
+    }
     else if(o.status==='out_for_delivery') groups.ofd.push(o);
   });
   for(const [k,arr] of Object.entries(groups)){
@@ -330,11 +338,11 @@ function renderBoard(){
     $('#c-'+k).textContent = arr.length;
   }
   $('#sVerify').textContent = groups.verify.length;
-  $('#sActive').textContent = groups.accepted.length+groups.preparing.length+groups.ready.length+groups.ofd.length;
+  const activeCount = ['accepted','preparing','ready','ready-pickup','served','ofd'].reduce((s,k)=>s+groups[k].length,0);
+  $('#sActive').textContent = activeCount;
   const todayRev = ORDERS.filter(o=>o.payment.paidAt).reduce((s,o)=>s+o.financials.customerPays,0);
   $('#sRev').textContent = rupee(todayRev);
   seen = new Set(ORDERS.map(o=>o.id));
-  // Make column headers collapsible on mobile
   document.querySelectorAll('.col-head').forEach(h=>{
     h.onclick = ()=>{ const body=h.nextElementSibling; if(body) body.classList.toggle('collapsed'); };
   });
@@ -343,32 +351,54 @@ function itemsText(o){ return o.items.map(i=>`${i.quantity}× ${i.name}`).join('
 function card(o, col){
   const flash = !seen.has(o.id)?'flash':'';
   let mid='', actions='';
-  const addr = `<div class="oc-addr">📍 ${o.delivery.building} · ${o.delivery.floorSeat}<br>${o.delivery.name} · ${o.delivery.phone}</div>`;
+
+  // Context display based on order type
+  let contextHtml = '';
+  if (o.orderType === 'DINE_IN') {
+    contextHtml = `<div class="oc-addr">🍽️ Dine-in · Table <b>${o.tableNumber||'—'}</b></div>`;
+  } else if (o.orderType === 'TAKEAWAY') {
+    contextHtml = `<div class="oc-addr">📦 Takeaway · <b>${o.delivery.name||o.customer.name}</b></div>`;
+  } else {
+    contextHtml = `<div class="oc-addr">🛵 ${o.delivery.building||''} · ${o.delivery.floorSeat||''}<br>${o.delivery.name||''} · ${o.delivery.phone||''}</div>`;
+  }
+
   const spec = o.specialRequest ? `<div class="txn" style="background:oklch(0.96 0.05 75);color:var(--bean)">⚠ ${o.specialRequest}</div>` : '';
+  const payLabel = o.paymentMethod==='COUNTER' ? '<span class="sbadge s-payment_verification_pending" style="margin-right:4px">Counter</span>' : '';
+
   if(col==='verify'){
-    mid = `<div class="txn">Txn ID: ${o.payment.transactionId||'—'}</div>` + spec + addr;
-    actions = `<div class="row-actions"><button class="btn sm danger" onclick="cancelOrder('${o.id}')">Reject</button><button class="btn sm" onclick="confirmPay('${o.id}')">Confirm Payment</button></div>`;
+    const txnInfo = o.paymentMethod==='COUNTER'
+      ? `<div class="txn" style="background:oklch(0.93 0.07 75)">💵 Pay at Counter</div>`
+      : `<div class="txn">Txn ID: ${o.payment.transactionId||'—'}</div>`;
+    mid = txnInfo + spec + contextHtml;
+    actions = `<div class="row-actions"><button class="btn sm danger" onclick="cancelOrder('${o.id}')">Reject</button><button class="btn sm" onclick="confirmPay('${o.id}')">Accept Order</button></div>`;
   } else if(col==='accepted'){
-    mid = spec + addr;
+    mid = spec + contextHtml;
     actions = `<div class="prep-note">🍳 Sent to kitchen…</div>`;
   } else if(col==='preparing'){
-    mid = spec + addr;
+    mid = spec + contextHtml;
     actions = `<div class="prep-note">🍳 Kitchen is preparing…</div>`;
   } else if(col==='ready'){
-    mid = addr;
+    mid = contextHtml;
     if(o.assignedDelivery){ mid += `<div class="assigned">✓ Assigned to ${o.assignedDelivery.name}</div>`; }
     const opts = DELIVERY_PERSONS.map(p=>`<option value="${p.id}">${p.name} (${p.activeOrders} active)</option>`).join('');
     actions = `<select class="assign" id="asg-${o.id}">${opts||'<option>No delivery staff</option>'}</select>
       <button class="btn sm block" onclick="assign('${o.id}')">${o.assignedDelivery?'Re-assign':'Assign delivery'}</button>`;
+  } else if(col==='ready-pickup'){
+    mid = contextHtml;
+    actions = `<button class="btn sm block" onclick="act('${o.id}','complete')">Mark as Picked Up ✓</button>`;
+  } else if(col==='served'){
+    mid = contextHtml;
+    actions = `<button class="btn sm block" onclick="act('${o.id}','complete')">Mark as Served ✓</button>`;
   } else if(col==='ofd'){
-    mid = addr + (o.assignedDelivery?`<div class="assigned">🛵 ${o.assignedDelivery.name}</div>`:'');
+    mid = contextHtml + (o.assignedDelivery?`<div class="assigned">🛵 ${o.assignedDelivery.name}</div>`:'');
   }
+
   return `<div class="ocard ${flash}"><div class="oc-top"><span class="oc-id">#${o.orderNumber}</span><span class="oc-time">${elapsed(o.timestamps.created)}</span></div>
     <div class="oc-items">${itemsText(o)}</div>${mid}
-    <div class="oc-top"><span class="oc-total">${rupee(o.financials.customerPays)}</span><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]}</span></div>
+    <div class="oc-top"><span class="oc-total">${rupee(o.financials.customerPays)}</span><span>${payLabel}<span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]}</span></span></div>
     ${actions}</div>`;
 }
-async function confirmPay(id){ try{ await api.patch('/admin/orders/'+id+'/confirm-payment'); toast('Payment verified ✓'); refresh(); }catch(e){ toast(e.message); } }
+async function confirmPay(id){ try{ await api.patch('/admin/orders/'+id+'/confirm-payment'); toast('Order accepted ✓'); refresh(); }catch(e){ toast(e.message); } }
 async function act(id, action){ try{ await api.patch('/admin/orders/'+id+'/'+action); refresh(); }catch(e){ toast(e.message); } }
 async function assign(id){
   const sel=$('#asg-'+id); const deliveryId=sel?sel.value:null;

@@ -464,8 +464,9 @@ router.post('/', async (req, res, next) => {
         const orderNumber = await generateOrderNumber();
 
         // ── Determine initial status ──
-        const initialStatus = paymentMethod === 'COUNTER' ? 'accepted' : 'payment_verification_pending';
-        const paidAt = paymentMethod === 'COUNTER' ? null : new Date();
+        // ALL orders start as payment_verification_pending — admin must approve
+        const initialStatus = 'payment_verification_pending';
+        const paidAt = paymentMethod === 'ONLINE' ? new Date() : null;
 
         // ── Save everything in a transaction ──
         const order = await prisma.$transaction(async (tx) => {
