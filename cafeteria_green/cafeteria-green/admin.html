@@ -530,24 +530,25 @@ async function loadShare(){
     const items = await api.get('/menu/all');
     const cats={}; items.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
     let tBase=0, tVis=0, tRest=0, tNet=0;
-    let html='<table class="mm"><tr><th>Item</th><th>Base price</th><th>Visible price</th><th>Restaurant (96%)</th><th>Developer share (4%)</th></tr>';
+    let html='<table class="mm"><tr><th>Item</th><th>Base price</th><th>Customer pays</th><th>Developer (4%)</th><th>Restaurant gets</th></tr>';
     Object.keys(cats).forEach(cat=>{
       html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
         const disc = it.developerDiscount || 0;
         const vis = (it.visiblePrice!=null) ? it.visiblePrice : it.price - disc;
-        const rest = it.price*(1-DEV_RATE);
-        const net = it.price*DEV_RATE - disc;
+        const net = vis * DEV_RATE;
+        const rest = vis - net;
         tBase+=it.price; tVis+=vis; tRest+=rest; tNet+=net;
         const visCell = disc>0 ? `<span style="text-decoration:line-through;color:var(--ink-faint)">${rupee(it.price)}</span> ${rupee(vis)}` : rupee(vis);
         html += `<tr><td>${it.name}${it.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
-          <td>${rupee(it.price)}</td><td>${visCell}</td><td>${rupee(rest)}</td>
-          <td style="color:var(--bean);font-weight:700">${rupee(net)}${disc>0?` <span class="muted" style="font-weight:400">(4% − ${rupee(disc)})</span>`:''}</td></tr>`;
+          <td>${rupee(it.price)}</td><td>${visCell}</td>
+          <td style="color:var(--bean);font-weight:700">${rupee(net)}</td>
+          <td>${rupee(rest)}</td></tr>`;
       });
     });
     html += `<tr style="border-top:2px solid var(--line)"><td style="font-weight:700">Total (all items)</td>
       <td style="font-weight:700">${rupee(tBase)}</td><td style="font-weight:700">${rupee(tVis)}</td>
-      <td style="font-weight:700">${rupee(tRest)}</td><td style="font-weight:700;color:var(--bean)">${rupee(tNet)}</td></tr>`;
+      <td style="font-weight:700;color:var(--bean)">${rupee(tNet)}</td><td style="font-weight:700">${rupee(tRest)}</td></tr>`;
     html += '</table>';
     $('#shareWrap').innerHTML = html;
   }catch(e){ $('#shareWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }

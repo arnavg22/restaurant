@@ -25,8 +25,9 @@ const prisma = new PrismaClient();
 router.use(authenticate, authorize('developer'));
 
 // ══════════════════════════════════════════════
-// MENU PRICING — developer manages the customer-visible price by
-// discounting out of their 4% share (per item).
+// MENU PRICING — Developer gets 4% of what the customer pays (after any discount).
+// Per-item discounts are promotional — they reduce the visible price for customers.
+// The developer's 4% is calculated on the final amount the customer pays.
 // ══════════════════════════════════════════════
 
 const r2 = (n) => Math.round(n * 100) / 100;
@@ -37,20 +38,20 @@ const EXEMPT_CATEGORIES = ['cafeteria special thali'];
 function pricingRow(item) {
     const base = parseFloat(item.price);
     const exempt = EXEMPT_CATEGORIES.includes(item.category.toLowerCase());
-    const discount = exempt ? 0 : clampDevDiscount(item.price, item.developerDiscount);
-    const grossShare = exempt ? 0 : r2(base * PLATFORM_FEE_RATE);
+    const discount = exempt ? 0 : parseFloat(item.developerDiscount || 0);
+    const customerPrice = r2(base - discount);
+    const devShare = exempt ? 0 : r2(customerPrice * PLATFORM_FEE_RATE);
+    const restShare = exempt ? customerPrice : r2(customerPrice - devShare);
     return {
         id: item.id,
         name: item.name,
         category: item.category,
         isAvailable: item.isAvailable,
         basePrice: base,
-        restaurantShare: exempt ? base : r2(base * (1 - PLATFORM_FEE_RATE)),
-        developerGrossShare: grossShare,
-        maxDiscount: grossShare,
         developerDiscount: discount,
-        visiblePrice: exempt ? base : visiblePrice(item.price, item.developerDiscount),
-        developerNetShare: r2(grossShare - discount),
+        visiblePrice: customerPrice,
+        developerShare: devShare,
+        restaurantShare: restShare,
         exempt
     };
 }
@@ -67,7 +68,7 @@ router.get('/pricing', async (req, res, next) => {
     }
 });
 
-// ── PATCH /dev/pricing/:id — set the per-item developer discount ──
+// ── PATCH /dev/pricing/:id — set the per-item promotional discount ──
 router.patch('/pricing/:id', async (req, res, next) => {
     try {
         const { developerDiscount } = req.body;
@@ -83,9 +84,8 @@ router.patch('/pricing/:id', async (req, res, next) => {
         if (isNaN(requested) || requested < 0) {
             throw new AppError('Discount must be a positive number', 400, 'VALIDATION_ERROR');
         }
-        const maxDiscount = r2(base * PLATFORM_FEE_RATE);
-        if (requested > maxDiscount + 0.001) {
-            throw new AppError(`Discount can be at most ₹${maxDiscount} (the 4% developer share on this item)`, 400, 'DISCOUNT_TOO_HIGH');
+        if (requested >= base) {
+            throw new AppError(`Discount cannot exceed the item price (₹${base})`, 400, 'DISCOUNT_TOO_HIGH');
         }
 
         const updated = await prisma.menuItem.update({

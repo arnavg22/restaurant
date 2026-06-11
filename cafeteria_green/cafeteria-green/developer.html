@@ -103,7 +103,7 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
 
     <div class="view" id="view-pricing">
       <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Customer-visible pricing</h3>
-        <div class="muted" style="font-size:13px">You control the price customers see by discounting out of your <b>4% share</b>. Restaurant always keeps 96% of the base price. <b>Visible price = base − your discount</b>; <b>your net share = 4% − discount</b>.</div></div>
+        <div class="muted" style="font-size:13px">Set a promotional discount per item to reduce the customer-visible price. <b>Your 4% share</b> is calculated on what the customer actually pays (after discount). <b>Visible price = base − discount</b>; <b>your share = visible price × 4%</b>.</div></div>
       <div class="card logwrap"><table class="log" id="pricingTable"></table></div>
     </div>
 
@@ -245,18 +245,18 @@ async function loadPricing(){
   try{
     const rows = await api.get('/dev/pricing');
     const cats={}; rows.forEach(r=>{ (cats[r.category]=cats[r.category]||[]).push(r); });
-    let html='<tr><th>Item</th><th>Base price</th><th>Restaurant (85%)</th><th>Your discount (₹)</th><th>Visible price</th><th>Your net share</th></tr>';
+    let html='<tr><th>Item</th><th>Base price</th><th>Discount (₹)</th><th>Customer pays</th><th>Your share (4%)</th><th>Restaurant gets</th></tr>';
     Object.keys(cats).forEach(cat=>{
       html += `<tr><td colspan="6" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(r=>{
         html += `<tr id="prow-${r.id}"><td>${r.name}${r.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
-          <td>${rupee(r.basePrice)}</td><td>${rupee(r.restaurantShare)}</td>
-          <td><input type="number" min="0" max="${r.maxDiscount}" step="1" value="${r.developerDiscount}" id="disc-${r.id}"
+          <td>${rupee(r.basePrice)}</td>
+          <td><input type="number" min="0" max="${r.basePrice-1}" step="1" value="${r.developerDiscount}" id="disc-${r.id}"
                  oninput="previewPricing('${r.id}',${r.basePrice})" style="width:80px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px"
-                 onchange="saveDiscount('${r.id}')">
-               <div class="muted" style="font-size:10px">max ${rupee(r.maxDiscount)}</div></td>
+                 onchange="saveDiscount('${r.id}')"></td>
           <td id="vis-${r.id}" style="font-weight:700">${rupee(r.visiblePrice)}</td>
-          <td id="net-${r.id}" style="color:var(--citrus);font-weight:700;background:var(--slate)">${rupee(r.developerNetShare)}</td></tr>`;
+          <td id="dev-${r.id}" style="color:var(--citrus);font-weight:700;background:var(--slate)">${rupee(r.developerShare)}</td>
+          <td id="rest-${r.id}">${rupee(r.restaurantShare)}</td></tr>`;
       });
     });
     $('#pricingTable').innerHTML = html;
@@ -264,8 +264,12 @@ async function loadPricing(){
 }
 function previewPricing(id, base){
   const d = Math.max(0, parseFloat($('#disc-'+id).value)||0);
-  $('#vis-'+id).textContent = rupee(base - d);
-  $('#net-'+id).textContent = rupee(base*0.15 - d);
+  const vis = base - d;
+  const dev = vis * 0.04;
+  const rest = vis - dev;
+  $('#vis-'+id).textContent = rupee(vis);
+  $('#dev-'+id).textContent = rupee(dev);
+  $('#rest-'+id).textContent = rupee(rest);
 }
 async function saveDiscount(id){
   const developerDiscount = parseFloat($('#disc-'+id).value)||0;
@@ -273,7 +277,8 @@ async function saveDiscount(id){
     const r = await api.patch('/dev/pricing/'+id, { developerDiscount });
     $('#disc-'+id).value = r.developerDiscount;
     $('#vis-'+id).textContent = rupee(r.visiblePrice);
-    $('#net-'+id).textContent = rupee(r.developerNetShare);
+    $('#dev-'+id).textContent = rupee(r.developerShare);
+    $('#rest-'+id).textContent = rupee(r.restaurantShare);
     toast('Saved · customers now pay '+rupee(r.visiblePrice));
   }catch(e){ toast(e.message); loadPricing(); }
 }

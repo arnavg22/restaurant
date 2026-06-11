@@ -436,8 +436,21 @@ async function loadAddresses(){ try{ ADDRESSES = await api.get('/addresses'); if
 function addressLines(a){ return `${a.buildingName} · ${a.floorSeat}<br>${a.deliveryName} · ${a.deliveryPhone}`; }
 function selectAddress(id){ selectedAddressId = id; renderCart(); }
 async function saveAddress(){
-  const payload = { label:$('#afLabel').value.trim(), deliveryName:$('#afName').value.trim(), deliveryPhone:$('#afPhone').value.trim(), buildingName:$('#afBuilding').value.trim(), floorSeat:$('#afFloor').value.trim() };
-  if(!payload.deliveryName||!payload.deliveryPhone||!payload.buildingName||!payload.floorSeat){ toast('Fill all address fields'); return; }
+  const tower = $('#afTower').value.trim();
+  const office = $('#afOffice').value.trim();
+  const floorNum = $('#afFloorNum').value.trim();
+  const officeNum = $('#afOfficeNum').value.trim();
+  const desk = $('#afDesk').value.trim();
+  const deliveryName = $('#afName').value.trim();
+  const deliveryPhone = $('#afPhone').value.trim();
+  const label = $('#afLabel').value.trim();
+
+  if(!deliveryName||!deliveryPhone||!tower||!office||!floorNum||!officeNum){ toast('Fill all required fields'); return; }
+
+  const buildingName = `${tower}, ${office}`;
+  const floorSeat = desk ? `${floorNum}, Office ${officeNum}, Desk ${desk}` : `${floorNum}, Office ${officeNum}`;
+
+  const payload = { label, deliveryName, deliveryPhone, buildingName, floorSeat };
   try{ const a = await api.post('/addresses', payload); ADDRESSES.unshift(a); selectedAddressId=a.id; toast('Address saved'); renderCart(); }
   catch(e){ toast(e.message.replace(/\n/g,' ')); }
 }
@@ -503,8 +516,11 @@ function renderCart(){
         <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
         <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
         <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
-        <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
-        <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
+        <div class="field"><label>Tower / Building number *</label><input id="afTower" placeholder="e.g. Tower A, Building 3"></div>
+        <div class="field"><label>Office name *</label><input id="afOffice" placeholder="e.g. TCS, Wipro, WeWork"></div>
+        <div class="field"><label>Floor number *</label><input id="afFloorNum" placeholder="e.g. 5th Floor"></div>
+        <div class="field"><label>Office number *</label><input id="afOfficeNum" placeholder="e.g. 502, Suite 12"></div>
+        <div class="field"><label>Desk number (optional)</label><input id="afDesk" placeholder="e.g. Desk 42"></div>
         <button class="btn block soft" onclick="saveAddress()">Save address</button>
       </div>`;
   } else if(orderType==='DINE_IN'){

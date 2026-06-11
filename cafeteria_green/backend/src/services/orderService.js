@@ -44,46 +44,47 @@ const prisma = new PrismaClient();
 /**
  * Calculate all financials for an order.
  *
- * NEW RULE: Discounts come from the RESTAURANT'S share.
- * Platform/developer always earns their full 4% of subtotal.
+ * Developer gets 4% of what the customer actually pays (after discount, before tax).
+ * Restaurant gets the rest.
  *
  * ┌────────────────────────────────────────────────────┐
  * │  subtotal       = Σ(item.price × quantity)         │
  * │  discount       = applied deal/promo discount      │
- * │  platform_fee   = subtotal × 0.04  (always full)   │
- * │  platform_earnings = platform_fee (full, untouched)│
- * │  restaurant_share  = subtotal - platform_fee - disc│
- * │  customer_pays  = subtotal - discount + tax        │
- * │  tax            = (subtotal - discount) × 0.05     │
+ * │  afterDiscount  = subtotal - discount              │
+ * │  platform_fee   = afterDiscount × 0.04             │
+ * │  restaurant_share = afterDiscount - platform_fee   │
+ * │  tax            = afterDiscount × 0.05             │
+ * │  customer_pays  = afterDiscount + tax              │
  * └────────────────────────────────────────────────────┘
  */
 export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0) {
-    // exemptSubtotal = portion of subtotal NOT subject to platform fee (e.g. thali items)
-    const feeableSubtotal = Math.max(0, subtotal - exemptSubtotal);
+    const cappedDiscount = roundMoney(Math.max(0, Math.min(discountAmount, subtotal)));
 
-    const platformFee = roundMoney(feeableSubtotal * PLATFORM_FEE_RATE);
-    // Platform always earns full 4% — discounts do NOT reduce platform earnings
+    // After discount = what the customer is actually paying (before tax)
+    const afterDiscount = roundMoney(subtotal - cappedDiscount);
+
+    // Developer gets 4% of the after-discount amount (excluding exempt items' share)
+    const exemptAfterDiscount = roundMoney(Math.min(exemptSubtotal, afterDiscount));
+    const feeableAmount = roundMoney(afterDiscount - exemptAfterDiscount);
+
+    const platformFee = roundMoney(feeableAmount * PLATFORM_FEE_RATE);
     const platformEarnings = platformFee;
 
-    // Discount reduces the customer price and is absorbed by the restaurant
-    const cappedDiscount = roundMoney(Math.max(0, discountAmount));
+    // Restaurant gets the rest
+    const restaurantShare = roundMoney(afterDiscount - platformFee);
 
-    // Restaurant gets subtotal minus platform fee minus the discount they absorb
-    const restaurantShare = roundMoney(subtotal - platformFee - cappedDiscount);
-
-    // 5% tax on the discounted subtotal (what customer pays before tax)
-    const preTotal = roundMoney(subtotal - cappedDiscount);
-    const taxAmount = roundMoney(preTotal * TAX_RATE);
-    const customerPays = roundMoney(preTotal + taxAmount);
+    // 5% tax on afterDiscount
+    const taxAmount = roundMoney(afterDiscount * TAX_RATE);
+    const customerPays = roundMoney(afterDiscount + taxAmount);
 
     return {
         subtotal: roundMoney(subtotal),
-        discountAmount: cappedDiscount,           // actual discount applied
-        taxAmount,                                // 5% tax
-        customerPays,                             // subtotal - discount + tax
+        discountAmount: cappedDiscount,
+        taxAmount,
+        customerPays,
         platformFee,
-        discountFromPlatform: 0,                  // platform no longer absorbs discounts
-        platformEarnings,                         // always full 4%
+        discountFromPlatform: 0,
+        platformEarnings,
         restaurantShare
     };
 }
