@@ -142,6 +142,27 @@ router.post('/payment-qr', async (req, res, next) => {
 });
 
 // ──────────────────────────────────────────────
+// ──────────────────────────────────────────────
+// CAFE POINTS (Rewards)
+// ──────────────────────────────────────────────
+
+// ── GET /orders/points — Get customer's cafe points balance ──
+router.get('/points', async (req, res, next) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { cafePoints: true }
+        });
+        const points = user?.cafePoints || 0;
+        // 10 points = ₹1
+        const redeemValue = Math.round(points / 10 * 100) / 100;
+        res.json({ points, redeemValue, rate: '10 points = ₹1' });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ──────────────────────────────────────────────
 // DEALS
 // ──────────────────────────────────────────────
 
@@ -306,6 +327,7 @@ router.post('/', async (req, res, next) => {
             dealCode,
             transactionId,
             specialRequest,
+            redeemPoints, // Number of cafe points to redeem
             // Legacy support: accept 'delivery' field as context for DELIVERY orders
             delivery
         } = req.body;
@@ -414,7 +436,29 @@ router.post('/', async (req, res, next) => {
         // ── Calculate all financials ──
         const discountAmount = Math.round((developerDiscountTotal + dealDiscount) * 100) / 100;
         exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
-        const financials = calculateOrderFinancials(subtotal, discountAmount, exemptSubtotal);
+
+        // ── Apply cafe points redemption ──
+        let pointsToRedeem = 0;
+        let pointsDiscount = 0;
+        if (redeemPoints && parseInt(redeemPoints) > 0) {
+            const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { cafePoints: true } });
+            const available = user?.cafePoints || 0;
+            pointsToRedeem = Math.min(parseInt(redeemPoints), available);
+            // 10 points = ₹1
+            pointsDiscount = Math.round(pointsToRedeem / 10 * 100) / 100;
+            // Points discount cannot exceed the after-deal subtotal
+            const afterDealSubtotal = subtotal - discountAmount;
+            pointsDiscount = Math.min(pointsDiscount, afterDealSubtotal);
+            // Recalculate actual points used (in case we capped)
+            pointsToRedeem = Math.round(pointsDiscount * 10);
+        }
+
+        const totalDiscount = Math.round((discountAmount + pointsDiscount) * 100) / 100;
+        const financials = calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal);
+
+        // ── Calculate points earned (10% of customerPays before tax, i.e., afterDiscount amount) ──
+        const afterDiscountAmount = Math.round((subtotal - totalDiscount) * 100) / 100;
+        const pointsEarned = Math.floor(afterDiscountAmount / 10); // 10% → 1 point per ₹10
 
         // ── Generate order number ──
         const orderNumber = await generateOrderNumber();
@@ -435,6 +479,8 @@ router.post('/', async (req, res, next) => {
                     specialRequest: (specialRequest && String(specialRequest).trim().slice(0, 500)) || null,
                     transactionId: paymentMethod === 'ONLINE' ? transactionId : null,
                     ...financials,
+                    pointsEarned,
+                    pointsRedeemed: pointsToRedeem,
                     appliedDealId: appliedDeal?.id || null,
                     status: initialStatus,
                     paidAt,
@@ -459,6 +505,8 @@ router.post('/', async (req, res, next) => {
                         subtotal: financials.subtotal,
                         discount: financials.discountAmount,
                         customerPays: financials.customerPays,
+                        pointsEarned,
+                        pointsRedeemed: pointsToRedeem,
                         dealId: appliedDeal?.id || null,
                         dealTitle: appliedDeal?.title || null
                     }
@@ -479,6 +527,14 @@ router.post('/', async (req, res, next) => {
                     data: { currentUses: { increment: 1 } }
                 });
             }
+
+            // Update user's cafe points: subtract redeemed, add earned
+            await tx.user.update({
+                where: { id: req.user.id },
+                data: {
+                    cafePoints: { increment: pointsEarned - pointsToRedeem }
+                }
+            });
 
             return newOrder;
         });

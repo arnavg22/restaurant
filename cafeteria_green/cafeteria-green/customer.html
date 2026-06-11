@@ -257,6 +257,7 @@ let ADDRESSES = [], selectedAddressId = null;
 let currentOrderId = null, trackTimer = null, ordersTimer = null, socket = null;
 let orderType = 'DELIVERY'; // DELIVERY | DINE_IN | TAKEAWAY
 let paymentMethod = 'ONLINE'; // ONLINE | COUNTER
+let cafePoints = 0, usePoints = false;
 const $ = s => document.querySelector(s);
 
 const FLOW = [
@@ -310,7 +311,7 @@ async function enterApp(){
   $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there');
   connectRealtime();
   await loadMenu();
-  loadDeals(); loadAddresses(); refreshOrdersBadge();
+  loadDeals(); loadAddresses(); loadPoints(); refreshOrdersBadge();
   go('menu');
 }
 function connectRealtime(){
@@ -324,6 +325,7 @@ function connectRealtime(){
 /* ---------- MENU ---------- */
 async function loadMenu(){ try{ MENU = await api.get('/menu'); renderMenu(); }catch(e){ $('#menuBody').innerHTML = `<div class="empty">Couldn't load menu: ${e.message}</div>`; } }
 async function loadDeals(){ try{ DEALS = await api.get('/orders/deals'); }catch{ DEALS=[]; } }
+async function loadPoints(){ try{ const d = await api.get('/orders/points'); cafePoints = d.points; }catch{ cafePoints=0; } }
 
 function setSection(sec){
   activeSection = sec;
@@ -539,11 +541,25 @@ function renderCart(){
     html += `<div class="section-title">Delivery note (optional)</div>
       <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival, near reception">${savedNote}</textarea></div>`;
   }
+  // Cafe Points redemption
+  const pointsValue = Math.round(cafePoints / 10 * 100) / 100; // ₹ value
+  if(cafePoints > 0){
+    html += `<div class="section-title">Cafe Points 🪙</div>
+      <div class="deal-chip ${usePoints?'sel':''}" onclick="togglePoints()" style="cursor:pointer;margin-bottom:10px">
+        <b>Use ${cafePoints} points (worth ${rupee(pointsValue)})</b>
+        <span class="muted">10 points = ₹1 discount</span>
+        ${usePoints?'<span style="color:var(--leaf-deep);font-weight:700;font-size:12px">✓ Applied</span>':''}
+      </div>`;
+  }
+  const pointsDisc = usePoints ? Math.min(pointsValue, sub - disc) : 0;
+  const totalDisc = disc + pointsDisc;
   // Bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
-    <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-disc)*0.05))}</span></div>
-    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>`;
+    ${pointsDisc>0?`<div class="bill-row" style="color:var(--citrus)"><span>Points discount (${Math.round(pointsDisc*10)} pts)</span><span>−${rupee(pointsDisc)}</span></div>`:''}
+    <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-totalDisc)*0.05))}</span></div>
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-totalDisc)*1.05))}</span></div>
+    <div class="bill-row" style="font-size:12px;color:var(--leaf-deep)"><span>🪙 You'll earn ${Math.floor((sub-totalDisc)/10)} points on this order</span></div></div>`;
   // Action button
   if(paymentMethod==='ONLINE'){
     html += `<div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
@@ -555,6 +571,7 @@ function renderCart(){
 let savedSpecial = '', savedNote = '';
 let savedTable = '', savedCtxName = '', savedCtxPhone = '';
 function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id) : null; renderCart(); }
+function togglePoints(){ stashNotes(); stashContext(); usePoints = !usePoints; renderCart(); }
 function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
 function stashContext(){ const t=$('#ctxTable'), n=$('#ctxName'), p=$('#ctxPhone'); if(t) savedTable=t.value; if(n) savedCtxName=n.value; if(p) savedCtxPhone=p.value; }
 function setOrderType(t){ stashNotes(); stashContext(); orderType=t; if(t==='DELIVERY') paymentMethod='ONLINE'; renderCart(); }
@@ -619,10 +636,11 @@ async function placeOrder(){
     const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'ONLINE', context, transactionId };
     if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
     if(selectedDeal) payload.dealCode = selectedDeal.id;
+    if(usePoints && cafePoints > 0) payload.redeemPoints = cafePoints;
     const order = await api.post('/orders', payload);
     currentOrderId = order.id;
-    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
-    refreshOrdersBadge(); go('track');
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone=''; usePoints=false;
+    loadPoints(); refreshOrdersBadge(); go('track');
     toast('Order placed! Awaiting payment verification.');
   }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="I've paid — place order"; }
 }
@@ -636,10 +654,11 @@ async function placeCounterOrder(){
     const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'COUNTER', context };
     if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
     if(selectedDeal) payload.dealCode = selectedDeal.id;
+    if(usePoints && cafePoints > 0) payload.redeemPoints = cafePoints;
     const order = await api.post('/orders', payload);
     currentOrderId = order.id;
-    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
-    refreshOrdersBadge(); go('track');
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone=''; usePoints=false;
+    loadPoints(); refreshOrdersBadge(); go('track');
     toast('Order placed! Pay at the counter.');
   }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="Place order (pay at counter) →"; }
 }

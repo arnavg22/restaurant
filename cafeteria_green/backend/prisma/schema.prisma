@@ -30,6 +30,7 @@ model User {
   passwordHash  String    @map("password_hash") 
   role          Role      @default(customer)
   isActive      Boolean   @default(true) @map("is_active")
+  cafePoints    Int       @default(0) @map("cafe_points")
   createdAt     DateTime  @default(now()) @map("created_at") 
   updatedAt     DateTime  @updatedAt @map("updated_at") 
 
@@ -183,6 +184,10 @@ model Order {
 
   // Deal
   appliedDealId           String?     @map("applied_deal_id") 
+
+  // Cafe Points (rewards)
+  pointsEarned            Int         @default(0) @map("points_earned")
+  pointsRedeemed          Int         @default(0) @map("points_redeemed")
 
   // Razorpay payment
   paidAt                  DateTime?   @map("paid_at") 
