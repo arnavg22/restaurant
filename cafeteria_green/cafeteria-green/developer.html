@@ -210,21 +210,21 @@ function renderOverview(d){
   $('#kpis').innerHTML = `
     <div class="kpi"><div class="l">Orders (all time)</div><div class="v">${d.periodStats.totalOrders}</div></div>
     <div class="kpi rev"><div class="l">Gross Revenue</div><div class="v">${rupee(d.periodStats.grossRevenue)}</div></div>
-    <div class="kpi platform"><div class="l">Platform Earnings (15%)</div><div class="v">${rupee(d.periodStats.platformEarnings)}</div></div>
+    <div class="kpi platform"><div class="l">Platform Earnings (4%)</div><div class="v">${rupee(d.periodStats.platformEarnings)}</div></div>
     <div class="kpi owed"><div class="l">Outstanding Commission</div><div class="v">${rupee(d.unsettled.outstandingCommission)}</div></div>
     <div class="kpi"><div class="l">Active Orders</div><div class="v">${d.activeOrders}</div></div>`;
   const items=d.topItems||[]; const max=Math.max(1,...items.map(i=>i.revenue));
   $('#topItems').innerHTML = items.length? items.map(i=>`<div class="barrow"><div class="bl">${i.name}</div><div class="bt"><div class="bf" style="width:${i.revenue/max*100}%"></div></div><div class="bv">${rupee(i.revenue)}</div></div>`).join('') : '<div class="muted">No delivered orders yet.</div>';
   $('#periodSummary').innerHTML = `
     <div class="barrow"><div class="bl">Customer revenue</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.customerRevenue)}</div></div>
-    <div class="barrow"><div class="bl">Restaurant payout (85%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.restaurantPayout)}</div></div>
-    <div class="barrow"><div class="bl">Platform earnings (15%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.platformEarnings)}</div></div>
+    <div class="barrow"><div class="bl">Restaurant payout (96%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.restaurantPayout)}</div></div>
+    <div class="barrow"><div class="bl">Platform earnings (4%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.platformEarnings)}</div></div>
     <div class="barrow"><div class="bl">Avg order value</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(d.periodStats.averageOrderValue)}</div></div>
     <div class="barrow"><div class="bl">Delivered today</div><div class="bv" style="width:auto;flex:1;text-align:right">${d.today.orders} · ${rupee(d.today.revenue)}</div></div>`;
 }
 
 function renderLog(){
-  let html='<tr><th>Order</th><th>Customer</th><th>Status</th><th>Items</th><th>Subtotal</th><th>Discount</th><th>Customer Pays</th><th>Platform 15%</th><th>Txn ID</th></tr>';
+  let html='<tr><th>Order</th><th>Customer</th><th>Status</th><th>Items</th><th>Subtotal</th><th>Discount</th><th>Customer Pays</th><th>Platform 4%</th><th>Txn ID</th></tr>';
   html += ORDERS.map(o=>`<tr><td><b>#${o.orderNumber}</b></td><td>${o.customer.name}</td>
     <td><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]||o.status}</span></td>
     <td>${o.items.reduce((s,i)=>s+i.qty,0)}</td><td>${rupee(o.financials.subtotal)}</td><td>${rupee(o.financials.discountAmount)}</td>
@@ -331,7 +331,7 @@ async function loadSettlements(){
     const s = d.summary;
     $('#commSummary').innerHTML = `
       <div class="barrow"><div class="bl">Outstanding (owed now)</div><div class="bv" style="width:auto;flex:1;text-align:right;color:var(--bean);font-weight:700">${rupee(s.outstandingCommission)}</div></div>
-      <div class="barrow"><div class="bl">Total earned (15%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(s.grossOutstanding)}</div></div>
+      <div class="barrow"><div class="bl">Total earned (4%)</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(s.grossOutstanding)}</div></div>
       <div class="barrow"><div class="bl">Received (verified)</div><div class="bv" style="width:auto;flex:1;text-align:right;color:var(--leaf-deep)">${rupee(s.totalPaid)}</div></div>
       <div class="barrow"><div class="bl">Pending verification</div><div class="bv" style="width:auto;flex:1;text-align:right">${rupee(s.totalPending)}</div></div>`;
     renderPayments(d.payments);

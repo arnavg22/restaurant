@@ -53,7 +53,7 @@ model MenuItem {
   name         String
   description  String?
   price        Decimal
-  // Per-item discount funded by the developer's 15% share (₹). Capped at price * 0.15.
+  // Per-item promotional discount (₹). Reduces the customer-visible price.
   // Visible price to customer = price - developerDiscount.
   developerDiscount Decimal @default(0) @map("developer_discount")
   category     String
@@ -341,7 +341,7 @@ model Setting {
 
 // ─────────────────────────────────────────────
 // COMMISSION PAYMENTS (restaurant → developer/platform)
-// The restaurant pays down its outstanding 15% commission to the developer.
+// The restaurant pays down its outstanding 4% commission to the developer.
 // Mirrors the customer→restaurant UPI flow: restaurant pays via the developer's
 // UPI, submits the transaction ID, developer verifies, outstanding is reduced.
 // ─────────────────────────────────────────────
