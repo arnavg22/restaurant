@@ -114,7 +114,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
                 description: description || null,
                 price,
                 category,
-                section: section === 'Bar' ? 'Bar' : 'Food',
+                section: ['Bar', 'Combo'].includes(section) ? section : 'Food',
                 variants: cleanVariants.length ? cleanVariants : undefined,
                 imageUrl: imageUrl || null,
                 sortOrder: sortOrder || 0
@@ -149,7 +149,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
                 ...(category !== undefined && { category }),
                 ...(imageUrl !== undefined && { imageUrl }),
                 ...(sortOrder !== undefined && { sortOrder }),
-                ...(section !== undefined && { section: section === 'Bar' ? 'Bar' : 'Food' }),
+                ...(section !== undefined && { section: ['Bar', 'Combo'].includes(section) ? section : 'Food' }),
                 ...(variants !== undefined && { variants: parseVariants(variants) })
             }
         });

@@ -134,8 +134,20 @@ enum OrderStatus {
   ready
   out_for_delivery
   delivered
+  completed
   cancelled
   payment_expired
+}
+
+enum OrderType {
+  DELIVERY
+  TAKEAWAY
+  DINE_IN
+}
+
+enum PaymentMethod {
+  ONLINE
+  COUNTER
 }
 
 model Order {
@@ -144,11 +156,16 @@ model Order {
   userId                  String      @map("user_id") 
   transactionId           String?     @unique @map("transaction_id") 
 
-  // Delivery info — MANDATORY, enforced at DB + API + frontend levels
-  deliveryName            String      @map("delivery_name") 
-  deliveryPhone           String      @map("delivery_phone") 
-  buildingName            String      @map("building_name")
-  floorSeat               String      @map("floor_seat")
+  // Order Type and Payment
+  orderType               OrderType   @default(DELIVERY) @map("order_type")
+  paymentMethod           PaymentMethod @default(ONLINE) @map("payment_method")
+  tableNumber             String?     @map("table_number")
+
+  // Delivery info — MANDATORY for DELIVERY orders, enforced at API level
+  deliveryName            String?     @map("delivery_name") 
+  deliveryPhone           String?     @map("delivery_phone") 
+  buildingName            String?     @map("building_name")
+  floorSeat               String?     @map("floor_seat")
   deliveryNotes           String?     @map("delivery_notes")
 
   // Special cooking requests from the customer (seen by the kitchen)

@@ -2,8 +2,8 @@
 // APPLICATION CONSTANTS
 // ============================================================
 
-export const PLATFORM_FEE_RATE = parseFloat(process.env.PLATFORM_FEE_RATE || '0.15');
-export const RESTAURANT_SHARE_RATE = 1 - PLATFORM_FEE_RATE; // 0.85
+export const PLATFORM_FEE_RATE = parseFloat(process.env.PLATFORM_FEE_RATE || '0.04');
+export const RESTAURANT_SHARE_RATE = 1 - PLATFORM_FEE_RATE; // 0.96
 export const TAX_RATE = parseFloat(process.env.TAX_RATE || '0.05'); // 5% tax on order subtotal
 export const ORDER_PAYMENT_TIMEOUT = parseInt(process.env.ORDER_PAYMENT_TIMEOUT_MINUTES || '10');
 
@@ -13,10 +13,11 @@ export const STATUS_TRANSITIONS = {
     payment_verification_pending: ['accepted', 'cancelled', 'payment_expired'],
     accepted:        ['preparing', 'cancelled'],
     preparing:       ['ready', 'cancelled'],
-    ready:           ['out_for_delivery', 'cancelled'],
+    ready:           ['out_for_delivery', 'completed', 'cancelled'],
     out_for_delivery: ['delivered'],
     // Terminal states — no transitions out
     delivered:       [],
+    completed:       [],
     cancelled:       [],
     payment_expired: []
 };
@@ -28,6 +29,7 @@ export const STATUS_AUTHORIZERS = {
     ready:             ['admin', 'kitchen'],
     out_for_delivery:  ['admin', 'delivery'],
     delivered:         ['delivery'],
+    completed:         ['admin'],
     cancelled:         ['admin'],
     payment_expired:   ['system']
 };
@@ -42,4 +44,4 @@ export const ROLES = {
 };
 
 // Terminal statuses (orders in these states won't change)
-export const TERMINAL_STATUSES = ['delivered', 'cancelled', 'payment_expired'];
+export const TERMINAL_STATUSES = ['delivered', 'completed', 'cancelled', 'payment_expired'];

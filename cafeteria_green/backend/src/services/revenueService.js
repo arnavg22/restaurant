@@ -20,7 +20,7 @@ const DEV_UPI_KEY = 'dev_upi_id';
  *
  * For each DELIVERED but UNSETTLED order:
  *
- *   platform_fee        = subtotal × 0.15
+ *   platform_fee        = subtotal × 0.04
  *   discount_from_deal  = discount applied (from platform share)
  *   platform_earnings   = platform_fee - discount_from_deal
  *

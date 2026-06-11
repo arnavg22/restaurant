@@ -24,57 +24,74 @@ const prisma = new PrismaClient();
  * Calculate all financials for an order.
  *
  * The key rule: DISCOUNTS COME FROM PLATFORM'S SHARE ONLY.
- * Restaurant always gets their 85% of the original subtotal.
+ * Restaurant always gets their 96% of the original subtotal.
  *
  * ┌────────────────────────────────────────────────────┐
  * │  subtotal       = Σ(item.price × quantity)         │
  * │  discount       = min(calculated_discount, cap)    │
  * │  customer_pays  = subtotal - discount              │
- * │  platform_fee   = subtotal × 0.15  (gross)         │
+ * │  platform_fee   = subtotal × 0.04  (gross)         │
  * │  platform_earnings = platform_fee - discount       │
- * │  restaurant_share  = subtotal × 0.85               │
+ * │  restaurant_share  = subtotal × 0.96               │
  * │                                                     │
  * │  VERIFICATION:                                      │
  * │  customer_pays = restaurant_share + platform_earnings│
- * │  (subtotal - discount) = (subtotal×0.85) + (fee-disc)│
- * │  = (subtotal×0.85) + (subtotal×0.15) - discount     │
+ * │  (subtotal - discount) = (subtotal×0.96) + (fee-disc)│
+ * │  = (subtotal×0.96) + (subtotal×0.04) - discount     │
  * │  = subtotal - discount  ✓                           │
+ * └────────────────────────────────────────────────────┘
+ */
+/**
+ * Calculate all financials for an order.
+ *
+ * NEW RULE: Discounts come from the RESTAURANT'S share.
+ * Platform/developer always earns their full 4% of subtotal.
+ *
+ * ┌────────────────────────────────────────────────────┐
+ * │  subtotal       = Σ(item.price × quantity)         │
+ * │  discount       = applied deal/promo discount      │
+ * │  platform_fee   = subtotal × 0.04  (always full)   │
+ * │  platform_earnings = platform_fee (full, untouched)│
+ * │  restaurant_share  = subtotal - platform_fee - disc│
+ * │  customer_pays  = subtotal - discount + tax        │
+ * │  tax            = (subtotal - discount) × 0.05     │
  * └────────────────────────────────────────────────────┘
  */
 export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0) {
     // exemptSubtotal = portion of subtotal NOT subject to platform fee (e.g. thali items)
     const feeableSubtotal = Math.max(0, subtotal - exemptSubtotal);
 
-    // Ensure discount never exceeds what platform can absorb (only from feeable portion)
-    const maxDiscount = feeableSubtotal * PLATFORM_FEE_RATE;
-    const cappedDiscount = Math.min(discountAmount, maxDiscount);
-
     const platformFee = roundMoney(feeableSubtotal * PLATFORM_FEE_RATE);
-    const restaurantShare = roundMoney(subtotal - platformFee);
+    // Platform always earns full 4% — discounts do NOT reduce platform earnings
+    const platformEarnings = platformFee;
 
-    // 5% tax on the discounted subtotal (what customer actually pays before tax)
+    // Discount reduces the customer price and is absorbed by the restaurant
+    const cappedDiscount = roundMoney(Math.max(0, discountAmount));
+
+    // Restaurant gets subtotal minus platform fee minus the discount they absorb
+    const restaurantShare = roundMoney(subtotal - platformFee - cappedDiscount);
+
+    // 5% tax on the discounted subtotal (what customer pays before tax)
     const preTotal = roundMoney(subtotal - cappedDiscount);
     const taxAmount = roundMoney(preTotal * TAX_RATE);
     const customerPays = roundMoney(preTotal + taxAmount);
 
-    const platformEarnings = roundMoney(platformFee - cappedDiscount);
-    const discountFromPlatform = roundMoney(cappedDiscount);
-
     return {
         subtotal: roundMoney(subtotal),
-        discountAmount: discountFromPlatform,    // actual discount applied
+        discountAmount: cappedDiscount,           // actual discount applied
         taxAmount,                                // 5% tax
         customerPays,                             // subtotal - discount + tax
         platformFee,
-        discountFromPlatform,
-        platformEarnings,
+        discountFromPlatform: 0,                  // platform no longer absorbs discounts
+        platformEarnings,                         // always full 4%
         restaurantShare
     };
 }
 
 /**
  * Calculate discount for a specific deal on an order.
- * Returns the discount amount (capped at platform's share).
+ * Returns the discount amount. Deals are now absorbed by the restaurant,
+ * not capped by the platform's share.
  */
 export function calculateDealDiscount(deal, subtotal, userId) {
     // Check if deal is valid
@@ -96,9 +113,8 @@ export function calculateDealDiscount(deal, subtotal, userId) {
         }
     }
 
-    // CRITICAL: Discount cannot exceed platform's 15% share
-    const maxDiscount = subtotal * PLATFORM_FEE_RATE;
-    discount = Math.min(discount, maxDiscount);
+    // Discount cannot exceed the subtotal itself
+    discount = Math.min(discount, subtotal);
 
     return roundMoney(discount);
 }
@@ -111,7 +127,7 @@ function roundMoney(amount) {
 }
 
 /**
- * The developer can only discount out of their 15% share, so a per-item
+ * The developer can only discount out of their 4% share, so a per-item
  * developer discount is clamped to [0, price * PLATFORM_FEE_RATE].
  */
 export function clampDevDiscount(price, discount) {
@@ -216,8 +232,9 @@ export async function transitionOrderStatus(orderId, options) {
         };
 
         // Set delivered timestamp
-        if (newStatus === 'delivered') {
+        if (newStatus === 'delivered' || newStatus === 'completed') {
             updateData.deliveredAt = new Date();
+            updateData.paidAt = new Date();
         }
 
         // Set cancellation info
@@ -345,90 +362,77 @@ export async function expirePaymentVerification() {
  * These are stored on the ORDER itself (not just user profile)
  * because the same user might order from different offices/desks.
  */
-export function validateDeliveryInfo(delivery) {
-    if (!delivery || typeof delivery !== 'object') {
-        throw new AppError(
-            'Delivery information is required. Please provide your name, phone number, office building, and desk/floor location before placing an order.',
-            400,
-            'MISSING_DELIVERY_INFO'
-        );
-    }
-
-    // ── Field presence checks ──
-    const fields = {
-        deliveryName:  { label: 'Your name',         min: 2,  max: 100 },
-        deliveryPhone: { label: 'Phone number',      min: 10, max: 15  },
-        buildingName:  { label: 'Office building / company name', min: 2, max: 200 },
-        floorSeat:     { label: 'Floor, desk, or seat location',  min: 2, max: 100 }
-    };
-
+export function validateOrderContext(data, orderType) {
     const errors = [];
+    const sanitized = {};
 
-    for (const [field, rules] of Object.entries(fields)) {
-        const value = delivery[field];
-
-        if (!value || typeof value !== 'string' || value.trim().length === 0) {
-            errors.push(`${rules.label} is required`);
-            continue;
-        }
-
-        const trimmed = value.trim();
-
-        if (trimmed.length < rules.min) {
-            errors.push(`${rules.label} must be at least ${rules.min} characters`);
-        }
-
-        if (trimmed.length > rules.max) {
-            errors.push(`${rules.label} must be under ${rules.max} characters`);
-        }
+    if (!data || typeof data !== 'object') {
+        throw new AppError('Order context is required.', 400, 'VALIDATION_ERROR');
     }
 
-    // ── Phone number validation (Indian mobile) ──
-    if (delivery.deliveryPhone && !errors.some(e => e.includes('Phone'))) {
-        const digits = delivery.deliveryPhone.replace(/\D/g, '');
+    if (orderType === 'DELIVERY') {
+        const fields = {
+            deliveryName:  { label: 'Your name',         min: 2,  max: 100 },
+            deliveryPhone: { label: 'Phone number',      min: 10, max: 15  },
+            buildingName:  { label: 'Office building / company name', min: 2, max: 200 },
+            floorSeat:     { label: 'Floor, desk, or seat location',  min: 2, max: 100 }
+        };
 
-        // Indian mobile: starts with 6/7/8/9, 10 digits
-        // Also accept with +91 prefix (12 digits total)
-        const cleanPhone = digits.length === 12 && digits.startsWith('91')
-            ? digits.slice(2)
-            : digits;
-
-        if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-            errors.push('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9');
+        for (const [field, rules] of Object.entries(fields)) {
+            const value = data[field];
+            if (!value || typeof value !== 'string' || value.trim().length === 0) {
+                errors.push(`${rules.label} is required`);
+                continue;
+            }
+            const trimmed = value.trim();
+            if (trimmed.length < rules.min) errors.push(`${rules.label} must be at least ${rules.min} characters`);
+            if (trimmed.length > rules.max) errors.push(`${rules.label} must be under ${rules.max} characters`);
         }
+
+        if (data.deliveryPhone && !errors.some(e => e.includes('Phone'))) {
+            const digits = data.deliveryPhone.replace(/\D/g, '');
+            const cleanPhone = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+            if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+                errors.push('Please enter a valid 10-digit Indian mobile number');
+            }
+        }
+        sanitized.deliveryName = data.deliveryName?.trim();
+        sanitized.deliveryPhone = data.deliveryPhone?.replace(/\D/g, '').slice(-10);
+        sanitized.buildingName = data.buildingName?.trim();
+        sanitized.floorSeat = data.floorSeat?.trim();
+
+    } else if (orderType === 'TAKEAWAY') {
+        if (!data.deliveryName || data.deliveryName.trim().length < 2) errors.push('Your name is required for takeaway');
+        if (!data.deliveryPhone) errors.push('Your phone number is required for takeaway');
+        if (data.deliveryPhone) {
+            const digits = data.deliveryPhone.replace(/\D/g, '');
+            const cleanPhone = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+            if (!/^[6-9]\d{9}$/.test(cleanPhone)) errors.push('Please enter a valid 10-digit Indian mobile number');
+        }
+        sanitized.deliveryName = data.deliveryName?.trim();
+        sanitized.deliveryPhone = data.deliveryPhone?.replace(/\D/g, '').slice(-10);
+
+    } else if (orderType === 'DINE_IN') {
+        if (!data.tableNumber || data.tableNumber.trim().length === 0) errors.push('Table number is required for dine-in');
+        sanitized.tableNumber = data.tableNumber?.trim();
+        if (data.deliveryName) sanitized.deliveryName = data.deliveryName.trim();
     }
 
-    // ── Building name: reject pure numbers or gibberish ──
-    if (delivery.buildingName && !errors.some(e => e.includes('building'))) {
-        const building = delivery.buildingName.trim();
-        if (/^\d+$/.test(building)) {
-            errors.push('Office building name should include actual text, not just a number');
-        }
-    }
-
-    // ── Floor/seat: should contain some useful location info ──
-    if (delivery.floorSeat && !errors.some(e => e.includes('Floor'))) {
-        const location = delivery.floorSeat.trim();
-        if (location.length < 2) {
-            errors.push('Please provide a more specific location (e.g., "3rd Floor, Desk 42" or "Ground Floor, Near Reception")');
-        }
-    }
-
-    // ── Throw all errors at once ──
     if (errors.length > 0) {
-        throw new AppError(
-            `Please complete your delivery details:\n• ${errors.join('\n• ')}`,
-            400,
-            'MISSING_DELIVERY_INFO'
-        );
+        throw new AppError(`Please complete the required details:\n• ${errors.join('\n• ')}`, 400, 'VALIDATION_ERROR');
     }
 
-    // ── Sanitize: trim all fields ──
-    delivery.deliveryName  = delivery.deliveryName.trim();
-    delivery.deliveryPhone = delivery.deliveryPhone.replace(/\D/g, '').slice(-10); // store last 10 digits
-    delivery.buildingName  = delivery.buildingName.trim();
-    delivery.floorSeat     = delivery.floorSeat.trim();
-    if (delivery.deliveryNotes) {
-        delivery.deliveryNotes = delivery.deliveryNotes.trim().slice(0, 500);
+    if (data.deliveryNotes) {
+        sanitized.deliveryNotes = data.deliveryNotes.trim().slice(0, 500);
     }
+    
+    return sanitized;
+}
+
+/**
+ * MANDATORY delivery info validation for DELIVERY orders.
+ * Kept for backward compatibility with validate-delivery endpoint.
+ */
+export function validateDeliveryInfo(delivery) {
+    return validateOrderContext(delivery, 'DELIVERY');
 }

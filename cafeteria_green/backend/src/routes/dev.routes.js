@@ -26,12 +26,12 @@ router.use(authenticate, authorize('developer'));
 
 // ══════════════════════════════════════════════
 // MENU PRICING — developer manages the customer-visible price by
-// discounting out of their 15% share (per item).
+// discounting out of their 4% share (per item).
 // ══════════════════════════════════════════════
 
 const r2 = (n) => Math.round(n * 100) / 100;
 
-// Categories exempt from the 15% platform fee (100% restaurant).
+// Categories exempt from the 4% platform fee (100% restaurant).
 const EXEMPT_CATEGORIES = ['cafeteria special thali'];
 
 function pricingRow(item) {
@@ -85,7 +85,7 @@ router.patch('/pricing/:id', async (req, res, next) => {
         }
         const maxDiscount = r2(base * PLATFORM_FEE_RATE);
         if (requested > maxDiscount + 0.001) {
-            throw new AppError(`Discount can be at most ₹${maxDiscount} (the 15% developer share on this item)`, 400, 'DISCOUNT_TOO_HIGH');
+            throw new AppError(`Discount can be at most ₹${maxDiscount} (the 4% developer share on this item)`, 400, 'DISCOUNT_TOO_HIGH');
         }
 
         const updated = await prisma.menuItem.update({
@@ -439,6 +439,136 @@ router.post('/settlements', async (req, res, next) => {
 
         const settlement = await createSettlement(periodStart, periodEnd, notes);
         res.status(201).json(settlement);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ══════════════════════════════════════════════
+// ORDER LOGS — CSV Downloads (today / this week / this month)
+// ══════════════════════════════════════════════
+
+router.get('/logs/csv', async (req, res, next) => {
+    try {
+        const { period = 'today' } = req.query;
+        const now = new Date();
+        let dateFrom;
+
+        if (period === 'today') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        } else if (period === 'week') {
+            const dayOfWeek = now.getDay() || 7;
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1);
+        } else if (period === 'month') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+            throw new AppError('Invalid period. Use today, week, or month', 400, 'VALIDATION_ERROR');
+        }
+
+        const orders = await prisma.order.findMany({
+            where: { createdAt: { gte: dateFrom } },
+            include: {
+                items: true,
+                user: { select: { name: true, phone: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const headers = ['Order #', 'Date', 'Time', 'Customer', 'Phone', 'Order Type', 'Payment', 'Status', 'Items', 'Subtotal', 'Discount', 'Tax', 'Total Paid', 'Restaurant Share', 'Platform Earnings', 'Transaction ID'];
+        const rows = orders.map(o => {
+            const d = new Date(o.createdAt);
+            const date = d.toLocaleDateString('en-IN');
+            const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const itemsList = o.items.map(i => `${i.itemName} x${i.quantity}`).join(' | ');
+            return [
+                o.orderNumber,
+                date,
+                time,
+                o.user.name,
+                o.user.phone,
+                o.orderType || 'DELIVERY',
+                o.paymentMethod || 'ONLINE',
+                o.status,
+                `"${itemsList}"`,
+                parseFloat(o.subtotal).toFixed(2),
+                parseFloat(o.discountAmount).toFixed(2),
+                parseFloat(o.taxAmount || 0).toFixed(2),
+                parseFloat(o.customerPays).toFixed(2),
+                parseFloat(o.restaurantShare).toFixed(2),
+                parseFloat(o.platformEarnings).toFixed(2),
+                o.transactionId || '-'
+            ].join(',');
+        });
+
+        const csv = [headers.join(','), ...rows].join('\n');
+        const filename = `orders_${period}_${now.toISOString().slice(0, 10)}.csv`;
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(csv);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ── GET /dev/logs — Order logs JSON (for dashboard display) ──
+router.get('/logs', async (req, res, next) => {
+    try {
+        const { period = 'today' } = req.query;
+        const now = new Date();
+        let dateFrom;
+
+        if (period === 'today') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        } else if (period === 'week') {
+            const dayOfWeek = now.getDay() || 7;
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1);
+        } else if (period === 'month') {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else {
+            throw new AppError('Invalid period', 400, 'VALIDATION_ERROR');
+        }
+
+        const orders = await prisma.order.findMany({
+            where: { createdAt: { gte: dateFrom } },
+            include: {
+                items: true,
+                user: { select: { name: true, phone: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const summary = {
+            totalOrders: orders.length,
+            totalRevenue: orders.reduce((s, o) => s + parseFloat(o.customerPays), 0),
+            totalRestaurantShare: orders.reduce((s, o) => s + parseFloat(o.restaurantShare), 0),
+            totalPlatformEarnings: orders.reduce((s, o) => s + parseFloat(o.platformEarnings), 0),
+            byStatus: {}
+        };
+        orders.forEach(o => { summary.byStatus[o.status] = (summary.byStatus[o.status] || 0) + 1; });
+
+        res.json({
+            period,
+            dateFrom,
+            summary,
+            orders: orders.map(o => ({
+                orderNumber: o.orderNumber,
+                date: o.createdAt,
+                customer: o.user.name,
+                phone: o.user.phone,
+                orderType: o.orderType || 'DELIVERY',
+                paymentMethod: o.paymentMethod || 'ONLINE',
+                status: o.status,
+                items: o.items.map(i => ({ name: i.itemName, qty: i.quantity, total: parseFloat(i.itemTotal) })),
+                subtotal: parseFloat(o.subtotal),
+                discount: parseFloat(o.discountAmount),
+                tax: parseFloat(o.taxAmount || 0),
+                customerPays: parseFloat(o.customerPays),
+                restaurantShare: parseFloat(o.restaurantShare),
+                platformEarnings: parseFloat(o.platformEarnings),
+                transactionId: o.transactionId
+            }))
+        });
     } catch (err) {
         next(err);
     }

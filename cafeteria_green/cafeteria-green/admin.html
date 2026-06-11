@@ -127,9 +127,11 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
     <nav class="sb-nav" id="nav">
       <button data-view="live" class="sel">🟢 Live Orders</button>
       <button data-view="menu">📋 Menu Manager</button>
+      <button data-view="combo">🍱 Combo Menu</button>
       <button data-view="staff">🛵 Delivery Staff</button>
       <button data-view="share">💸 Developer Share</button>
       <button data-view="dash">📊 Dashboard</button>
+      <button data-view="logs">📝 Logs</button>
       <button data-view="settings">⚙️ Settings</button>
     </nav>
     <div class="sb-foot"><div class="clock" id="clock">--:--:--</div><div class="role" id="who">Counter Staff</div><button class="logout" onclick="logout()">Log out</button></div>
@@ -153,6 +155,20 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
         </div>
       </div>
       <div class="view" id="view-menu"><div class="addbar" id="addbar"></div><div id="mmWrap"></div></div>
+      <div class="view" id="view-combo">
+        <div class="card" style="margin-bottom:16px;max-width:700px">
+          <h3 style="margin-bottom:10px">Add a Combo / Meal</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Combo name *</label><input id="comboName" placeholder="e.g. Family Meal Combo"></div>
+            <div class="field"><label>Price ₹ *</label><input id="comboPrice" type="number" placeholder="e.g. 399"></div>
+            <div class="field" style="grid-column:span 2"><label>Description (optional)</label><input id="comboDesc" placeholder="e.g. 2 Burgers + Fries + 2 Drinks"></div>
+            <div class="field"><label>Category</label><input id="comboCat" placeholder="e.g. Meal Combos" value="Combo"></div>
+          </div>
+          <button class="btn" onclick="addCombo()">+ Add Combo</button>
+        </div>
+        <h3 style="margin-bottom:10px">Combo / Meal items</h3>
+        <div id="comboList"></div>
+      </div>
       <div class="view" id="view-staff">
         <div class="card" style="margin-bottom:16px;max-width:640px"><h3 style="margin-bottom:10px">Add a delivery person</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -179,16 +195,37 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
             <div class="muted" style="font-size:12px">Max payable now: <b id="commAvailable">₹0</b></div>
           </div>
         </div>
-        <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Developer share — 15% of menu price</h3>
-          <div class="muted" style="font-size:13px">The platform / developer earns <b>15%</b> of every item's listed price; the restaurant keeps the remaining <b>85%</b>. This applies to each item below.</div></div>
+        <div class="section-head" style="margin:0 0 12px"><div><h3>Commission payment history</h3><div class="sub" style="margin:0">Your payments to the platform · newest first</div></div></div>
+        <div class="card logwrap" style="padding:0;overflow-x:auto;margin-bottom:24px"><table class="mm" id="commPayLog"></table></div>
+        <div class="section-head" style="margin:0 0 12px"><div><h3>Order-wise developer share</h3><div class="sub" style="margin:0">Every order's split, for transparency</div></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn sm" id="shareToday" onclick="loadShareOrders('today')">Today</button>
+            <button class="btn sm ghost" id="shareWeek" onclick="loadShareOrders('week')">This Week</button>
+            <button class="btn sm ghost" id="shareMonth" onclick="loadShareOrders('month')">This Month</button>
+            <button class="btn sm dark" onclick="exportShareCSV()">⬇ CSV</button>
+          </div></div>
+        <div class="card logwrap" style="padding:0;overflow-x:auto;margin-bottom:24px"><table class="mm" id="shareLog"></table></div>
+        <div class="section-head" style="margin:0 0 12px"><div><h3>Item-wise developer share</h3><div class="sub" style="margin:0">Developer share — 4% of menu price per item</div></div></div>
+        <div class="card" style="margin-bottom:16px;padding:10px 14px"><div class="muted" style="font-size:13px">The platform / developer earns <b>4%</b> of every item's listed price; the restaurant keeps the remaining <b>96%</b>.</div></div>
         <div id="shareWrap"></div>
-        <div class="section-head" style="margin:24px 0 12px"><div><h3>Order-wise developer share</h3><div class="sub" style="margin:0">Every order's split, for transparency · newest first</div></div>
-          <button class="btn sm dark" onclick="exportShareCSV()">⬇ Export CSV</button></div>
-        <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="shareLog"></table></div>
-        <div class="section-head" style="margin:24px 0 12px"><div><h3>Commission payment history</h3><div class="sub" style="margin:0">Your payments to the platform · newest first</div></div></div>
-        <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="commPayLog"></table></div>
       </div>
       <div class="view" id="view-dash"><div class="dash-grid" id="dashKpis"></div><div class="card" id="dashOutstanding"></div></div>
+      <div class="view" id="view-logs">
+        <div class="section-head" style="margin-bottom:16px"><div><h3>Order Logs</h3><div class="sub">View and download order logs by period</div></div></div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="btn sm" id="logToday" onclick="loadLogs('today')">📅 Today</button>
+          <button class="btn sm ghost" id="logWeek" onclick="loadLogs('week')">📆 This Week</button>
+          <button class="btn sm ghost" id="logMonth" onclick="loadLogs('month')">🗓 This Month</button>
+        </div>
+        <div class="card" style="margin-bottom:16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center" id="logSummary">
+          <div class="stat"><div class="l">Orders</div><div class="v" id="logCount">0</div></div>
+          <div class="stat accent"><div class="l">Revenue</div><div class="v" id="logRevenue">₹0</div></div>
+          <div class="stat"><div class="l">Restaurant Share</div><div class="v" id="logRestShare">₹0</div></div>
+          <div class="stat warn"><div class="l">Platform Earnings</div><div class="v" id="logPlatform">₹0</div></div>
+          <button class="btn sm dark" onclick="downloadLogCSV()" style="margin-left:auto">⬇ Download CSV</button>
+        </div>
+        <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="logTable"><thead></thead><tbody></tbody></table></div>
+      </div>
       <div class="view" id="view-settings">
         <div class="card" style="max-width: 640px;">
           <h3 style="margin-bottom: 10px;">Payment Settings</h3>
@@ -261,9 +298,11 @@ $('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(
   $('#view-'+currentView).classList.add('active');
   $('#title').textContent=b.textContent.trim().replace(/^\S+\s/,'');
   if(currentView==='menu') loadMenuMgr();
+  if(currentView==='combo') loadCombo();
   if(currentView==='staff') loadStaff();
   if(currentView==='share') loadShare();
   if(currentView==='dash') loadDash();
+  if(currentView==='logs') loadLogs('today');
 });
 
 async function loadDeliveryPersons(){ try{ DELIVERY_PERSONS = await api.get('/admin/delivery-persons'); }catch{ DELIVERY_PERSONS=[]; } }
@@ -348,7 +387,7 @@ async function loadMenuMgr(){
   $('#addbar').innerHTML = `
     <div class="field"><label>Name</label><input id="niName" placeholder="Dish name"></div>
     <div class="field"><label>Category</label><input id="niCat" placeholder="e.g. Snacks"></div>
-    <div class="field"><label>Section</label><select id="niSection"><option value="Food">Food</option><option value="Bar">Bar</option></select></div>
+    <div class="field"><label>Section</label><select id="niSection"><option value="Food">Food</option><option value="Bar">Bar</option><option value="Combo">Combo</option></select></div>
     <div class="field"><label>Price ₹</label><input id="niPrice" type="number" style="width:90px"></div>
     <button class="btn sm" onclick="addItem()">+ Add item</button>`;
   try{
@@ -361,8 +400,9 @@ async function loadMenuMgr(){
         const nVar = (it.variants||[]).length;
         html += `<tr><td>${it.name}</td>
           <td><select class="mm-price" style="width:84px" onchange="updateSection('${it.id}',this.value)">
-            <option value="Food" ${it.section!=='Bar'?'selected':''}>Food</option>
-            <option value="Bar" ${it.section==='Bar'?'selected':''}>Bar</option></select></td>
+            <option value="Food" ${it.section==='Food'||(!it.section)?'selected':''}>Food</option>
+            <option value="Bar" ${it.section==='Bar'?'selected':''}>Bar</option>
+            <option value="Combo" ${it.section==='Combo'?'selected':''}>Combo</option></select></td>
           <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)" ${nVar?'disabled title="priced by size"':''}></td>
           <td><button class="btn sm soft" onclick="openVarEditor('${it.id}')">${nVar?nVar+' option'+(nVar>1?'s':''):'+ add'}</button></td>
           <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td></tr>`;
@@ -420,8 +460,17 @@ async function loadStaff(){
         <div style="width:42px;height:42px;border-radius:50%;background:var(--leaf-bg);color:var(--leaf-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:Bricolage Grotesque">${p.name.split(' ').map(s=>s[0]).join('').slice(0,2)}</div>
         <div style="flex:1"><div style="font-weight:700">${p.name}</div><div class="muted" style="font-size:13px">📞 ${p.phone}</div></div>
         <span class="sbadge ${p.activeOrders?'s-out_for_delivery':'s-delivered'}">${p.activeOrders?p.activeOrders+' active':'available'}</span>
+        <button class="btn sm danger" onclick="removeStaff('${p.id}','${p.name.replace(/'/g,"\\'")}')">Remove</button>
       </div>`).join('') : '<div class="muted">No delivery staff yet. Add one above.</div>';
   }catch(e){ $('#staffList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function removeStaff(id, name){
+  if(!confirm('Remove '+name+' from the delivery team? This will deactivate their account.')) return;
+  try{
+    await api.del('/admin/delivery-persons/'+id);
+    toast(name+' removed');
+    loadStaff(); loadDeliveryPersons();
+  }catch(e){ toast(e.message); }
 }
 async function createStaff(){
   const name=$('#dpName').value.trim(), phone=$('#dpPhone').value.trim(), email=$('#dpEmail').value.trim(), password=$('#dpPass').value;
@@ -434,26 +483,66 @@ async function createStaff(){
   }catch(e){ toast(e.message); }
 }
 
-/* ---------- DEVELOPER SHARE (15% of each item's price) ---------- */
-const DEV_RATE = 0.15;
+/* ---------- COMBO MENU ---------- */
+async function loadCombo(){
+  try{
+    const items = await api.get('/menu/all');
+    const combos = items.filter(i=>i.section==='Combo');
+    if(!combos.length){ $('#comboList').innerHTML='<div class="muted">No combo items yet. Add one above.</div>'; return; }
+    const cats = {};
+    combos.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
+    let html='<table class="mm"><tr><th>Combo</th><th>Description</th><th>Price (₹)</th><th>Available</th><th></th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(it=>{
+        html += `<tr><td style="font-weight:600">${it.name}</td>
+          <td class="muted" style="font-size:12.5px">${it.description||'—'}</td>
+          <td><input class="mm-price" type="number" value="${it.price}" onchange="updateComboPrice('${it.id}',this.value)"></td>
+          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleComboAvail('${it.id}')"><span class="sl"></span></label></td>
+          <td><button class="btn sm danger" onclick="deleteCombo('${it.id}','${it.name.replace(/'/g,"\\'")}')">✕</button></td></tr>`;
+      });
+    });
+    html+='</table>';
+    $('#comboList').innerHTML = html;
+  }catch(e){ $('#comboList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function addCombo(){
+  const name=$('#comboName').value.trim(), price=parseFloat($('#comboPrice').value), desc=$('#comboDesc').value.trim(), category=$('#comboCat').value.trim()||'Combo';
+  if(!name||!price){ toast('Fill combo name and price'); return; }
+  try{
+    await api.post('/menu',{ name, price, category, section:'Combo', description:desc||undefined });
+    toast(name+' added to Combo menu');
+    $('#comboName').value=''; $('#comboPrice').value=''; $('#comboDesc').value='';
+    loadCombo();
+  }catch(e){ toast(e.message); }
+}
+async function updateComboPrice(id, val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
+async function toggleComboAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); loadCombo(); }catch(e){ toast(e.message); } }
+async function deleteCombo(id, name){
+  if(!confirm('Remove "'+name+'" from the combo menu?')) return;
+  try{ await api.del('/menu/'+id); toast(name+' removed'); loadCombo(); }catch(e){ toast(e.message); }
+}
+
+/* ---------- DEVELOPER SHARE (4% of each item's price) ---------- */
+const DEV_RATE = 0.04;
 async function loadShare(){
   try{
     const items = await api.get('/menu/all');
     const cats={}; items.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
     let tBase=0, tVis=0, tRest=0, tNet=0;
-    let html='<table class="mm"><tr><th>Item</th><th>Base price</th><th>Visible price</th><th>Restaurant (85%)</th><th>Developer share</th></tr>';
+    let html='<table class="mm"><tr><th>Item</th><th>Base price</th><th>Visible price</th><th>Restaurant (96%)</th><th>Developer share (4%)</th></tr>';
     Object.keys(cats).forEach(cat=>{
       html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
         const disc = it.developerDiscount || 0;
         const vis = (it.visiblePrice!=null) ? it.visiblePrice : it.price - disc;
         const rest = it.price*(1-DEV_RATE);
-        const net = it.price*DEV_RATE - disc;   // 15% − discount
+        const net = it.price*DEV_RATE - disc;
         tBase+=it.price; tVis+=vis; tRest+=rest; tNet+=net;
         const visCell = disc>0 ? `<span style="text-decoration:line-through;color:var(--ink-faint)">${rupee(it.price)}</span> ${rupee(vis)}` : rupee(vis);
         html += `<tr><td>${it.name}${it.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
           <td>${rupee(it.price)}</td><td>${visCell}</td><td>${rupee(rest)}</td>
-          <td style="color:var(--bean);font-weight:700">${rupee(net)}${disc>0?` <span class="muted" style="font-weight:400">(15% − ${rupee(disc)})</span>`:''}</td></tr>`;
+          <td style="color:var(--bean);font-weight:700">${rupee(net)}${disc>0?` <span class="muted" style="font-weight:400">(4% − ${rupee(disc)})</span>`:''}</td></tr>`;
       });
     });
     html += `<tr style="border-top:2px solid var(--line)"><td style="font-weight:700">Total (all items)</td>
@@ -462,24 +551,29 @@ async function loadShare(){
     html += '</table>';
     $('#shareWrap').innerHTML = html;
   }catch(e){ $('#shareWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
-  loadShareLog();
+  loadShareOrders('today');
   loadCommission();
 }
-let SHARE_ORDERS=[];
-async function loadShareLog(){
+let SHARE_ORDERS=[], shareOrderPeriod='today';
+async function loadShareOrders(period){
+  shareOrderPeriod = period;
+  $('#shareToday').className = period==='today'?'btn sm':'btn sm ghost';
+  $('#shareWeek').className = period==='week'?'btn sm':'btn sm ghost';
+  $('#shareMonth').className = period==='month'?'btn sm':'btn sm ghost';
   try{
-    const data = await api.get('/admin/orders?limit=200');
+    const data = await api.get('/admin/logs?period='+period);
     SHARE_ORDERS = data.orders;
     let totPaid=0, totRest=0, totDev=0;
-    let html='<tr><th>Order</th><th>Date</th><th>Status</th><th>Customer paid</th><th>Restaurant (85%)</th><th>Developer share (15% net)</th></tr>';
+    let html='<tr><th>Order</th><th>Date</th><th>Status</th><th>Customer paid</th><th>Restaurant (96%)</th><th>Developer share (4%)</th></tr>';
     html += SHARE_ORDERS.map(o=>{
-      const f=o.financials; totPaid+=f.customerPays; totRest+=f.restaurantShare; totDev+=f.platformEarnings;
-      const d=new Date(o.timestamps.created).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      totPaid+=o.customerPays; totRest+=o.restaurantShare; totDev+=o.platformEarnings;
+      const d=new Date(o.date).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
       return `<tr><td><b>#${o.orderNumber}</b></td><td>${d}</td><td><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]||o.status}</span></td>
-        <td>${rupee(f.customerPays)}</td><td>${rupee(f.restaurantShare)}</td>
-        <td style="color:var(--bean);font-weight:700">${rupee(f.platformEarnings)}</td></tr>`;
+        <td>${rupee(o.customerPays)}</td><td>${rupee(o.restaurantShare)}</td>
+        <td style="color:var(--bean);font-weight:700">${rupee(o.platformEarnings)}</td></tr>`;
     }).join('');
-    html += `<tr style="border-top:2px solid var(--line)"><td colspan="3" style="font-weight:700">Total · ${SHARE_ORDERS.length} orders</td>
+    if(!SHARE_ORDERS.length) html += '<tr><td colspan="6" class="muted" style="padding:14px">No orders in this period.</td></tr>';
+    else html += `<tr style="border-top:2px solid var(--line)"><td colspan="3" style="font-weight:700">Total · ${SHARE_ORDERS.length} orders</td>
       <td style="font-weight:700">${rupee(totPaid)}</td><td style="font-weight:700">${rupee(totRest)}</td>
       <td style="font-weight:700;color:var(--bean)">${rupee(totDev)}</td></tr>`;
     $('#shareLog').innerHTML = html;
@@ -555,6 +649,51 @@ async function loadDash(){
     $('#dashOutstanding').innerHTML = `<h3 style="margin-bottom:12px">Unsettled delivered orders (${od.length})</h3>` +
       (od.length? od.map(o=>`<div class="bill-row" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft)"><span>#${o.orderNumber} · ${o.customer.name}</span><span>${rupee(o.financials.customerPaid)} · platform ${rupee(o.financials.platformEarnings)}</span></div>`).join('') : '<div class="muted">No unsettled orders.</div>');
   }catch(e){ $('#dashKpis').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+
+/* ---------- LOGS ---------- */
+let currentLogPeriod = 'today';
+async function loadLogs(period){
+  currentLogPeriod = period;
+  // Update button styles
+  $('#logToday').className = period==='today'?'btn sm':'btn sm ghost';
+  $('#logWeek').className = period==='week'?'btn sm':'btn sm ghost';
+  $('#logMonth').className = period==='month'?'btn sm':'btn sm ghost';
+  try{
+    const data = await api.get('/admin/logs?period='+period);
+    // Summary
+    $('#logCount').textContent = data.summary.totalOrders;
+    $('#logRevenue').textContent = rupee(data.summary.totalRevenue);
+    $('#logRestShare').textContent = rupee(data.summary.totalRestaurantShare);
+    $('#logPlatform').textContent = rupee(data.summary.totalPlatformEarnings);
+    // Table
+    const table = $('#logTable');
+    let html = '<thead><tr><th>Order #</th><th>Date</th><th>Customer</th><th>Type</th><th>Payment</th><th>Status</th><th>Items</th><th>Total</th><th>Rest. Share</th><th>Platform</th></tr></thead><tbody>';
+    data.orders.forEach(o=>{
+      const d = new Date(o.date);
+      const dateStr = d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+      const timeStr = d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const itemsTxt = o.items.map(i=>`${i.qty}× ${i.name}`).join(', ');
+      html += `<tr>
+        <td style="font-weight:700">${o.orderNumber}</td>
+        <td>${dateStr} ${timeStr}</td>
+        <td>${o.customer}</td>
+        <td>${o.orderType}</td>
+        <td>${o.paymentMethod}</td>
+        <td><span class="sbadge s-${o.status}">${STATUS_LABEL[o.status]||o.status}</span></td>
+        <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${itemsTxt}</td>
+        <td style="font-weight:700">${rupee(o.customerPays)}</td>
+        <td>${rupee(o.restaurantShare)}</td>
+        <td>${rupee(o.platformEarnings)}</td>
+      </tr>`;
+    });
+    html += '</tbody>';
+    if(!data.orders.length) html = '<thead><tr><th colspan="10" style="text-align:center;padding:40px;color:var(--ink-faint)">No orders in this period</th></tr></thead>';
+    table.innerHTML = html;
+  }catch(e){ toast(e.message); }
+}
+function downloadLogCSV(){
+  window.open('/api/v1/admin/logs/csv?period='+currentLogPeriod+'&token='+api.token, '_blank');
 }
 
 /* init */

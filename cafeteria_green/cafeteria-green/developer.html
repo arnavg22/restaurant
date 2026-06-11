@@ -88,6 +88,7 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
       <button data-view="overview" class="sel">Overview</button>
       <button data-view="pricing">Pricing &amp; Discounts</button>
       <button data-view="orders">Order Log</button>
+      <button data-view="logs">📝 Logs (CSV)</button>
       <button data-view="deals">Discount Schemes</button>
       <button data-view="settlements">Settlements</button>
     </div>
@@ -102,7 +103,7 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
 
     <div class="view" id="view-pricing">
       <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Customer-visible pricing</h3>
-        <div class="muted" style="font-size:13px">You control the price customers see by discounting out of your <b>15% share</b>. Restaurant always keeps 85% of the base price. <b>Visible price = base − your discount</b>; <b>your net share = 15% − discount</b>.</div></div>
+        <div class="muted" style="font-size:13px">You control the price customers see by discounting out of your <b>4% share</b>. Restaurant always keeps 96% of the base price. <b>Visible price = base − your discount</b>; <b>your net share = 4% − discount</b>.</div></div>
       <div class="card logwrap"><table class="log" id="pricingTable"></table></div>
     </div>
 
@@ -111,8 +112,27 @@ table.log td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-spa
         <div class="logwrap"><table class="log" id="logTable"></table></div></div>
     </div>
 
+    <div class="view" id="view-logs">
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-head"><div><h3>Order Logs</h3><div class="muted" style="font-size:12px;margin-top:2px">View and download order logs by period</div></div></div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn sm" id="dlToday" onclick="loadDevLogs('today')">📅 Today</button>
+          <button class="btn sm ghost" id="dlWeek" onclick="loadDevLogs('week')">📆 This Week</button>
+          <button class="btn sm ghost" id="dlMonth" onclick="loadDevLogs('month')">🗓 This Month</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="stat"><div class="l">Orders</div><div class="v" id="dlCount">0</div></div>
+        <div class="stat accent"><div class="l">Revenue</div><div class="v" id="dlRevenue">₹0</div></div>
+        <div class="stat"><div class="l">Restaurant Share</div><div class="v" id="dlRestShare">₹0</div></div>
+        <div class="stat warn"><div class="l">Platform Earnings</div><div class="v" id="dlPlatform">₹0</div></div>
+        <button class="btn sm dark" onclick="downloadDevLogCSV()" style="margin-left:auto;align-self:center">⬇ Download CSV</button>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="log" id="devLogTable"></table></div>
+    </div>
+
     <div class="view" id="view-deals">
-      <div class="card"><h3>New discount scheme <span class="muted" style="font-weight:400;font-size:12px">(applies to the whole order; discount comes from your 15% share)</span></h3>
+      <div class="card"><h3>New discount scheme <span class="muted" style="font-weight:400;font-size:12px">(promotional — absorbed by restaurant, not your 4%)</span></h3>
         <div class="dealform">
           <div class="field"><label>Discount type</label><select id="dlType" onchange="dlTypeChanged()"><option value="flat">Flat amount (₹)</option><option value="percent">Percentage (%)</option></select></div>
           <div class="field"><label id="dlValueLabel">Amount off (₹)</label><input id="dlValue" type="number" placeholder="e.g. 40"></div>
@@ -174,6 +194,7 @@ $('#tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if
   if(currentView==='deals') loadDeals();
   if(currentView==='pricing') loadPricing();
   if(currentView==='settlements') loadSettlements();
+  if(currentView==='logs') loadDevLogs('today');
 });
 
 async function refresh(){
@@ -330,6 +351,43 @@ async function saveDevUpi(){
 }
 async function verifyPay(id){ try{ await api.patch('/dev/commission/payments/'+id+'/verify'); toast('Payment verified ✓'); loadSettlements(); refresh(); }catch(e){ toast(e.message); } }
 async function rejectPay(id){ const reason=prompt('Reason for rejecting this payment?'); if(reason===null) return; try{ await api.patch('/dev/commission/payments/'+id+'/reject',{ reason }); toast('Payment rejected'); loadSettlements(); }catch(e){ toast(e.message); } }
+
+/* ---------- LOGS ---------- */
+let currentDevLogPeriod = 'today';
+async function loadDevLogs(period){
+  currentDevLogPeriod = period;
+  $('#dlToday').className = period==='today'?'btn sm':'btn sm ghost';
+  $('#dlWeek').className = period==='week'?'btn sm':'btn sm ghost';
+  $('#dlMonth').className = period==='month'?'btn sm':'btn sm ghost';
+  try{
+    const data = await api.get('/dev/logs?period='+period);
+    $('#dlCount').textContent = data.summary.totalOrders;
+    $('#dlRevenue').textContent = rupee(data.summary.totalRevenue);
+    $('#dlRestShare').textContent = rupee(data.summary.totalRestaurantShare);
+    $('#dlPlatform').textContent = rupee(data.summary.totalPlatformEarnings);
+    let html = '<tr><th>Order #</th><th>Date</th><th>Customer</th><th>Type</th><th>Payment</th><th>Status</th><th>Total</th><th>Rest. Share</th><th>Platform</th></tr>';
+    data.orders.forEach(o=>{
+      const d = new Date(o.date);
+      const dateStr = d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      html += `<tr>
+        <td style="font-weight:700">${o.orderNumber}</td>
+        <td>${dateStr}</td>
+        <td>${o.customer}</td>
+        <td>${o.orderType}</td>
+        <td>${o.paymentMethod}</td>
+        <td><span class="sbadge s-${o.status}">${o.status}</span></td>
+        <td style="font-weight:700">${rupee(o.customerPays)}</td>
+        <td>${rupee(o.restaurantShare)}</td>
+        <td>${rupee(o.platformEarnings)}</td>
+      </tr>`;
+    });
+    if(!data.orders.length) html = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--ink-faint)">No orders in this period</td></tr>';
+    $('#devLogTable').innerHTML = html;
+  }catch(e){ toast(e.message); }
+}
+function downloadDevLogCSV(){
+  window.open('/api/v1/dev/logs/csv?period='+currentDevLogPeriod+'&token='+api.token, '_blank');
+}
 
 if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
 </script>

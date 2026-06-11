@@ -25,7 +25,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { validateDeliveryInfo } from '../services/orderService.js';
+import { validateDeliveryInfo, validateOrderContext } from '../services/orderService.js';
 import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine } from '../services/orderService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -70,7 +70,7 @@ async function computeCartTotal(items, dealCode, userId) {
     }
     const itemMap = new Map(menuItems.map(m => [m.id, m]));
     let subtotal = 0, devDiscount = 0, exemptSubtotal = 0;
-    // Categories exempt from the 15% platform fee (100% goes to restaurant)
+    // Categories exempt from the 4% platform fee (100% goes to restaurant)
     const EXEMPT_CATEGORIES = ['cafeteria special thali'];
     for (const item of items) {
         const menuItem = itemMap.get(item.menuItemId);
@@ -93,7 +93,7 @@ async function computeCartTotal(items, dealCode, userId) {
         });
         if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId);
     }
-    // Both developer per-item discounts and deals come out of the platform's 15% share
+    // Both developer per-item discounts and deals come out of the platform's 4% share
     return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100, exemptSubtotal);
 }
 
@@ -293,19 +293,22 @@ router.post('/preview', async (req, res, next) => {
 /**
  * POST /orders — Place order
  *
- * THIS IS THE MAIN GATEWAY. The server enforces:
- *
- * 1. Cart must have items
- * 2. Delivery info MUST be complete (validated before anything else)
- * 3. Menu items must be available at current prices
- * 4. Deal (if any) must be valid and applicable
- * 5. Only THEN is a Razorpay order created (generating the QR)
- *
- * If delivery info is missing/incomplete → 400 error, NO order created, NO payment possible.
+ * Supports three order types: DELIVERY, DINE_IN, TAKEAWAY
+ * Supports two payment methods: ONLINE (UPI), COUNTER (pay at counter)
  */
 router.post('/', async (req, res, next) => {
     try {
-        const { items, delivery, dealCode, transactionId, specialRequest } = req.body;
+        const {
+            items,
+            orderType = 'DELIVERY',
+            paymentMethod = 'ONLINE',
+            context, // Contains delivery info, table number, etc.
+            dealCode,
+            transactionId,
+            specialRequest,
+            // Legacy support: accept 'delivery' field as context for DELIVERY orders
+            delivery
+        } = req.body;
 
         // ── Pre-check: items must exist ──
         if (!items || items.length === 0) {
@@ -316,17 +319,14 @@ router.post('/', async (req, res, next) => {
             );
         }
 
-        // ── Pre-check: delivery object must exist ──
-        if (!delivery) {
-            throw new AppError(
-                'Delivery information is required. Please provide your name, phone number, office building name, and desk/floor location.',
-                400,
-                'MISSING_DELIVERY_INFO'
-            );
-        }
+        // Use context or fall back to legacy delivery field
+        const orderContext = context || delivery;
 
-        // ── Pre-check: transactionId must exist ──
-        if (!transactionId) {
+        // ── Validate context based on order type ──
+        const sanitizedContext = validateOrderContext(orderContext, orderType);
+
+        // ── Pre-check: transactionId must exist for ONLINE payment ──
+        if (paymentMethod === 'ONLINE' && !transactionId) {
             throw new AppError(
                 'Transaction ID is required. Please provide the transaction ID from your payment.',
                 400,
@@ -334,10 +334,7 @@ router.post('/', async (req, res, next) => {
             );
         }
 
-        // ── 1. Validate delivery info (mandatory) ──
-        validateDeliveryInfo(delivery);
-
-        // ── 2. Validate and fetch menu items ──
+        // ── Validate and fetch menu items ──
         const menuItemIds = items.map(i => i.menuItemId);
         const menuItems = await prisma.menuItem.findMany({
             where: {
@@ -352,9 +349,9 @@ router.post('/', async (req, res, next) => {
             throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
         }
 
-        // ── 3. Calculate subtotal with price snapshot (resolves Bar variants) ──
+        // ── Calculate subtotal with price snapshot (resolves Bar variants) ──
         const itemMap = new Map(menuItems.map(m => [m.id, m]));
-        // Categories exempt from the 15% platform fee (100% restaurant)
+        // Categories exempt from the 4% platform fee (100% restaurant)
         const EXEMPT_CATEGORIES = ['cafeteria special thali'];
 
         let subtotal = 0;
@@ -383,7 +380,7 @@ router.post('/', async (req, res, next) => {
         subtotal = Math.round(subtotal * 100) / 100;
         developerDiscountTotal = Math.round(developerDiscountTotal * 100) / 100;
 
-        // ── 4. Apply deal if provided (on top of per-item developer discounts) ──
+        // ── Apply deal if provided ──
         let appliedDeal = null;
         let dealDiscount = 0;
 
@@ -398,7 +395,6 @@ router.post('/', async (req, res, next) => {
             });
 
             if (appliedDeal) {
-                // Check per-user usage
                 const userUsage = await prisma.dealUsage.count({
                     where: { dealId: appliedDeal.id, userId: req.user.id }
                 });
@@ -415,32 +411,33 @@ router.post('/', async (req, res, next) => {
             }
         }
 
-        // ── 5. Calculate all financials ──
-        // Both per-item developer discounts and any deal come out of the platform's 15% share.
+        // ── Calculate all financials ──
         const discountAmount = Math.round((developerDiscountTotal + dealDiscount) * 100) / 100;
         exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
         const financials = calculateOrderFinancials(subtotal, discountAmount, exemptSubtotal);
 
-        // ── 5b. Generate a human-friendly, unique order number ──
+        // ── Generate order number ──
         const orderNumber = await generateOrderNumber();
 
-        // ── 6. Save everything in a transaction ──
+        // ── Determine initial status ──
+        const initialStatus = paymentMethod === 'COUNTER' ? 'accepted' : 'payment_verification_pending';
+        const paidAt = paymentMethod === 'COUNTER' ? null : new Date();
+
+        // ── Save everything in a transaction ──
         const order = await prisma.$transaction(async (tx) => {
-            // Create the order
             const newOrder = await tx.order.create({
                 data: {
                     orderNumber,
                     userId: req.user.id,
-                    deliveryName: delivery.deliveryName,
-                    deliveryPhone: delivery.deliveryPhone,
-                    buildingName: delivery.buildingName,
-                    floorSeat: delivery.floorSeat,
-                    deliveryNotes: delivery.deliveryNotes || null,
+                    orderType,
+                    paymentMethod,
+                    ...sanitizedContext,
                     specialRequest: (specialRequest && String(specialRequest).trim().slice(0, 500)) || null,
-                    transactionId: transactionId,
+                    transactionId: paymentMethod === 'ONLINE' ? transactionId : null,
                     ...financials,
                     appliedDealId: appliedDeal?.id || null,
-                    status: 'payment_verification_pending',
+                    status: initialStatus,
+                    paidAt,
                     items: {
                         create: orderItems
                     }
@@ -450,15 +447,14 @@ router.post('/', async (req, res, next) => {
                 }
             });
 
-            // Create initial log entry
             await tx.orderLog.create({
                 data: {
                     orderId: newOrder.id,
                     fromStatus: null,
-                    toStatus: 'payment_verification_pending',
+                    toStatus: initialStatus,
                     changedBy: req.user.id,
                     changedByRole: 'customer',
-                    notes: 'Order placed, awaiting payment verification',
+                    notes: `Order placed via ${orderType} / ${paymentMethod}`,
                     metadata: {
                         subtotal: financials.subtotal,
                         discount: financials.discountAmount,
@@ -469,7 +465,6 @@ router.post('/', async (req, res, next) => {
                 }
             });
 
-            // Record deal usage
             if (appliedDeal) {
                 await tx.dealUsage.create({
                     data: {
@@ -479,7 +474,6 @@ router.post('/', async (req, res, next) => {
                     }
                 });
 
-                // Increment deal usage counter
                 await tx.deal.update({
                     where: { id: appliedDeal.id },
                     data: { currentUses: { increment: 1 } }
@@ -607,6 +601,8 @@ function formatOrder(order) {
     return {
         id: order.id,
         orderNumber: order.orderNumber,
+        orderType: order.orderType || 'DELIVERY',
+        paymentMethod: order.paymentMethod || 'ONLINE',
         status: order.status,
         items: order.items.map(i => ({
             menuItemId: i.menuItemId,
@@ -624,6 +620,7 @@ function formatOrder(order) {
             floorSeat: order.floorSeat,
             notes: order.deliveryNotes
         },
+        tableNumber: order.tableNumber || null,
         // Delivery partner contact — only exposed to the customer once out for delivery
         deliveryAgent: (order.assignedDelivery && ['out_for_delivery', 'delivered'].includes(order.status))
             ? { name: order.assignedDelivery.name, phone: order.assignedDelivery.phone }

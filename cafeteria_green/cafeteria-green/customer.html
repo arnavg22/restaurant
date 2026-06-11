@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="cg.css">
 <style>
-.app{max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,.06);position:relative;display:flex;flex-direction:column;overflow:hidden}
+.app{max-width:100%;margin:0 auto;height:100vh;height:100dvh;background:var(--bg);position:relative;display:flex;flex-direction:column;overflow:hidden}
 .screen{display:none;flex-direction:column;flex:1;min-height:0}
 .screen.active{display:flex}
 .topbar{background:var(--leaf);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
@@ -22,8 +22,8 @@
 .back-btn{display:flex;align-items:center;gap:8px;color:#fff;font-weight:600;font-size:15px}
 .back-btn svg{width:20px;height:20px}
 .logout{font-size:12px;color:rgba(255,255,255,.85);cursor:pointer}
-.body{flex:1;min-height:0;padding:14px 16px 24px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.menuhead{flex:0 0 auto;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--line-soft)}
+.body{flex:1;min-height:0;padding:14px 16px 24px;overflow-y:auto;-webkit-overflow-scrolling:touch;max-width:700px;margin:0 auto;width:100%}
+.menuhead{flex:0 0 auto;background:var(--bg);padding:10px 16px;border-bottom:1px solid var(--line-soft);max-width:700px;margin:0 auto;width:100%}
 .menuhead input{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);padding:0 16px;font-size:14px;background:var(--panel)}
 .seg{display:flex;gap:6px;background:var(--panel-2);padding:5px;border-radius:13px;margin-bottom:10px}
 .seg button{flex:1;height:40px;border-radius:10px;font-weight:700;font-size:14px;color:var(--ink-soft);transition:all .15s}
@@ -32,7 +32,7 @@
 /* variant modal */
 .modal-bg{position:absolute;inset:0;background:rgba(15,23,20,.55);display:none;align-items:flex-end;justify-content:center;z-index:60}
 .modal-bg.show{display:flex}
-.vmodal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:440px;padding:20px 18px 24px;animation:fadeSlideUp .25s ease}
+.vmodal{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:20px 18px 24px;animation:fadeSlideUp .25s ease}
 .vmodal h3{font-size:18px}
 .vmodal .sub{font-size:13px;color:var(--ink-faint);margin-bottom:14px}
 .vopt{display:flex;align-items:center;justify-content:space-between;border:1.5px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:10px;cursor:pointer;transition:all .15s}
@@ -132,6 +132,24 @@
 .powered b{color:var(--leaf-deep);font-weight:700}
 .powered.on-leaf{color:rgba(255,255,255,.85)}
 .powered.on-leaf b{color:#fff}
+
+/* Responsive: wider screens */
+@media(min-width:600px){
+  .body{padding:20px 24px 30px}
+  .menuhead{padding:12px 24px}
+  .topbar{padding:16px 24px}
+  .item{padding:14px 0}
+  .cat-head{margin-top:12px}
+  .cart-item{padding:10px 0}
+  .cartbar{left:24px;right:24px;bottom:78px}
+  .qr-box img{width:280px;height:280px}
+}
+@media(min-width:900px){
+  .body{padding:24px 40px 40px;max-width:800px}
+  .menuhead{padding:14px 40px;max-width:800px;margin:0 auto;width:100%}
+  .cat-fab{bottom:90px;right:32px;width:54px;height:54px;font-size:22px}
+  .cat-popup{right:32px;bottom:154px;width:260px}
+}
 </style>
 </head>
 <body>
@@ -173,7 +191,7 @@
       </button>
     </div>
     <div class="menuhead">
-      <div class="seg" id="sectionTabs"><button data-sec="Food" class="sel" onclick="setSection('Food')">🍽 Food</button><button data-sec="Bar" onclick="setSection('Bar')">🍺 Bar</button></div>
+      <div class="seg" id="sectionTabs"><button data-sec="Food" class="sel" onclick="setSection('Food')">🍽 Food</button><button data-sec="Bar" onclick="setSection('Bar')">🍺 Bar</button><button data-sec="Combo" onclick="setSection('Combo')">🍱 Combo</button></div>
       <input id="search" placeholder="Search dishes…" oninput="renderMenu()">
     </div>
     <div class="body" id="menuBody"><div class="empty">Loading menu…</div></div>
@@ -219,6 +237,14 @@
     <button data-nav="menu" class="sel" onclick="go('menu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10" stroke-linecap="round"/></svg>Menu</button>
     <button data-nav="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4" stroke-linecap="round"/></svg>Orders<span class="nbadge" id="ordersBadge" style="display:none">0</span></button>
   </div>
+
+  <!-- Category FAB -->
+  <button class="cat-fab" id="catFab" onclick="toggleCatPopup()">☰</button>
+  <div class="cat-popup" id="catPopup">
+    <div class="cat-popup-head">Jump to category</div>
+    <div class="cat-popup-list" id="catPopupList"></div>
+  </div>
+  <div class="cat-popup-overlay" id="catOverlay" onclick="closeCatPopup()"></div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -229,6 +255,8 @@ const api = CGApi('customer');
 let MENU = [], CART = {}, DEALS = [], selectedDeal = null, activeSection = 'Food';
 let ADDRESSES = [], selectedAddressId = null;
 let currentOrderId = null, trackTimer = null, ordersTimer = null, socket = null;
+let orderType = 'DELIVERY'; // DELIVERY | DINE_IN | TAKEAWAY
+let paymentMethod = 'ONLINE'; // ONLINE | COUNTER
 const $ = s => document.querySelector(s);
 
 const FLOW = [
@@ -250,6 +278,9 @@ function go(screen){
   const navScreens = (screen==='menu'||screen==='orders');
   $('#botnav').classList.toggle('show', navScreens);
   $('#botnav').querySelectorAll('button').forEach(b=>b.classList.toggle('sel', b.dataset.nav===screen));
+  // category FAB only on menu
+  $('#catFab').style.display = screen==='menu'?'flex':'none';
+  closeCatPopup();
   // cart bar only on menu
   updateCartBar(screen);
   // per-screen
@@ -276,7 +307,7 @@ async function doRegister(){
 function logout(){ if(socket) socket.disconnect(); stopTracking(); stopOrdersPolling(); api.logout(); location.reload(); }
 
 async function enterApp(){
-  $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there') + ' · Delivery';
+  $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there');
   connectRealtime();
   await loadMenu();
   loadDeals(); loadAddresses(); refreshOrdersBadge();
@@ -303,13 +334,17 @@ function ckey(id, variant){ return variant ? id+'::'+variant : id; }
 function renderMenu(){
   const q = $('#search').value.trim().toLowerCase();
   const cats = {};
-  MENU.filter(it=>(it.section||'Food')===activeSection).filter(it=>!q || it.name.toLowerCase().includes(q))
-    .forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
+  // If searching, search across all sections; otherwise filter by active section
+  const filtered = q
+    ? MENU.filter(it => it.name.toLowerCase().includes(q))
+    : MENU.filter(it => (it.section||'Food')===activeSection);
+  filtered.forEach(it=>{ (cats[it.category]=cats[it.category]||[]).push(it); });
   const keys = Object.keys(cats);
-  if(!keys.length){ $('#menuBody').innerHTML=`<div class="empty">No ${activeSection.toLowerCase()} items${q?' match your search':''}.</div>`; return; }
+  if(!keys.length){ $('#menuBody').innerHTML=`<div class="empty">${q?'No items match your search':'No '+activeSection.toLowerCase()+' items'}.</div>`; updateCatPopup([]); return; }
   let html='';
   keys.forEach(cat=>{
-    html += `<div class="cat-head"><h3>${cat}</h3></div>`;
+    const catId = 'cat-'+cat.replace(/[^a-zA-Z0-9]/g,'_');
+    html += `<div class="cat-head" id="${catId}"><h3>${cat}</h3></div>`;
     cats[cat].forEach(it=>{
       let priceHtml;
       if(it.hasVariants) priceHtml = `from ${rupee(it.price)}`;
@@ -324,6 +359,7 @@ function renderMenu(){
   html += `<div class="powered">Powered by <b>BazaarDeal</b></div>`;
   $('#menuBody').innerHTML = html;
   Object.values(cats).flat().forEach(it=>renderAdd(it));
+  updateCatPopup(keys);
 }
 function renderAdd(it){
   const slot=document.getElementById('add-'+it.id); if(!slot) return;
@@ -367,6 +403,34 @@ function updateCartBar(){
   $('#cbCount').textContent = n+' item'+(n!==1?'s':''); $('#cbTotal').textContent = rupee(cartSubtotal());
 }
 
+/* ---------- CATEGORY FAB ---------- */
+function updateCatPopup(categories){
+  const list=$('#catPopupList');
+  if(!categories.length){ list.innerHTML='<div class="muted" style="padding:12px 16px;font-size:13px">No categories</div>'; return; }
+  list.innerHTML = categories.map(cat=>{
+    const catId = 'cat-'+cat.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<button onclick="scrollToCat('${catId}')">${cat}</button>`;
+  }).join('');
+}
+function toggleCatPopup(){
+  const popup=$('#catPopup'), overlay=$('#catOverlay');
+  const open = popup.classList.toggle('show');
+  overlay.classList.toggle('show', open);
+}
+function closeCatPopup(){
+  $('#catPopup').classList.remove('show');
+  $('#catOverlay').classList.remove('show');
+}
+function scrollToCat(catId){
+  closeCatPopup();
+  const el=document.getElementById(catId);
+  const container=$('#menuBody');
+  if(el && container) {
+    const top = el.offsetTop - container.offsetTop;
+    container.scrollTo({top: top, behavior:'smooth'});
+  }
+}
+
 /* ---------- ADDRESSES ---------- */
 async function loadAddresses(){ try{ ADDRESSES = await api.get('/addresses'); if(!selectedAddressId && ADDRESSES.length) selectedAddressId = ADDRESSES[0].id; }catch{ ADDRESSES=[]; } }
 function addressLines(a){ return `${a.buildingName} · ${a.floorSeat}<br>${a.deliveryName} · ${a.deliveryPhone}`; }
@@ -389,17 +453,27 @@ function renderCart(){
   const arr=cartItems();
   if(!arr.length){ $('#cartBody').innerHTML=`<div class="empty">Your cart is empty.<br><br><button class="btn ghost" onclick="go('menu')">Browse menu</button></div>`; return; }
   let html='';
+  // Order type selector
+  html += `<div class="section-title">Order type</div>
+    <div class="seg"><button class="${orderType==='DELIVERY'?'sel':''}" onclick="setOrderType('DELIVERY')">🛵 Delivery</button>
+    <button class="${orderType==='DINE_IN'?'sel':''}" onclick="setOrderType('DINE_IN')">🍽 Dine-in</button>
+    <button class="${orderType==='TAKEAWAY'?'sel':''}" onclick="setOrderType('TAKEAWAY')">📦 Takeaway</button></div>`;
+  // Payment method selector (counter not available for delivery)
+  html += `<div class="section-title">Payment</div>
+    <div class="seg"><button class="${paymentMethod==='ONLINE'?'sel':''}" onclick="setPaymentMethod('ONLINE')">📱 Pay Online (UPI)</button>
+    <button class="${paymentMethod==='COUNTER'?'sel':''}" ${orderType==='DELIVERY'?'disabled style="opacity:.4;cursor:not-allowed"':''}onclick="setPaymentMethod('COUNTER')">💵 Pay at Counter</button></div>`;
+  // Cart items
+  html += `<div class="section-title">Items</div>`;
   arr.forEach(c=>{
-    const vArg = c.variant ? `'${c.variant.replace(/'/g,"'")}'` : 'null';
+    const vArg = c.variant ? `'${c.variant.replace(/'/g,"&#39;")}'` : 'null';
     const nm = c.item.name + (c.variant?` · ${c.variant}`:'');
     html += `<div class="cart-item"><div style="flex:1"><div class="item-name">${nm}</div><div class="item-price">${rupee(c.unitPrice)}</div></div>
       <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
   });
   const sub=cartSubtotal();
-  // drop a chosen scheme that no longer qualifies
   if(selectedDeal && sub < selectedDeal.minOrderAmount) selectedDeal = null;
   const disc = selectedDeal ? estimateDiscount(selectedDeal, sub) : 0;
-  // discount schemes (choose one)
+  // Deals
   if(DEALS.length){
     const sorted = [...DEALS].sort((a,b)=>a.minOrderAmount-b.minOrderAmount);
     html += `<div class="section-title">Discount schemes <span class="muted" style="font-weight:400;font-size:12px">choose one</span></div><div class="deal-pick">`;
@@ -414,56 +488,90 @@ function renderCart(){
     });
     html += `</div>`;
   }
-  // addresses
-  html += `<div class="section-title">Deliver to</div>`;
-  ADDRESSES.forEach(a=>{
-    html += `<div class="addr-card ${selectedAddressId===a.id?'sel':''}" onclick="selectAddress('${a.id}')">
-      <div class="addr-radio"></div>
-      <div class="addr-main"><div class="addr-label">${a.label?`<span class="addr-tag">${a.label}</span>`:''}${a.deliveryName}</div>
-        <div class="addr-line">${a.buildingName} · ${a.floorSeat}<br>📞 ${a.deliveryPhone}</div></div>
-      <button class="addr-del" onclick="removeAddress('${a.id}',event)" title="Remove">✕</button></div>`;
-  });
-  html += `<div class="addr-add" onclick="document.getElementById('addrForm').classList.toggle('show')">＋ Add a new address</div>
-    <div class="addr-form" id="addrForm">
-      <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
-      <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
-      <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
-      <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
-      <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
-      <button class="btn block soft" onclick="saveAddress()">Save address</button>
-    </div>`;
-  // per-order notes
+  // Context fields based on order type
+  if(orderType==='DELIVERY'){
+    html += `<div class="section-title">Deliver to</div>`;
+    ADDRESSES.forEach(a=>{
+      html += `<div class="addr-card ${selectedAddressId===a.id?'sel':''}" onclick="selectAddress('${a.id}')">
+        <div class="addr-radio"></div>
+        <div class="addr-main"><div class="addr-label">${a.label?`<span class="addr-tag">${a.label}</span>`:''}${a.deliveryName}</div>
+          <div class="addr-line">${a.buildingName} · ${a.floorSeat}<br>📞 ${a.deliveryPhone}</div></div>
+        <button class="addr-del" onclick="removeAddress('${a.id}',event)" title="Remove">✕</button></div>`;
+    });
+    html += `<div class="addr-add" onclick="document.getElementById('addrForm').classList.toggle('show')">＋ Add a new address</div>
+      <div class="addr-form" id="addrForm">
+        <div class="field"><label>Label (optional)</label><input id="afLabel" placeholder="e.g. Office, Home"></div>
+        <div class="field"><label>Receiver name *</label><input id="afName" value="${api.user?.name||''}"></div>
+        <div class="field"><label>Phone *</label><input id="afPhone" inputmode="tel" value="${api.user?.phone||''}"></div>
+        <div class="field"><label>Office / building *</label><input id="afBuilding" placeholder="e.g. Tech Park Tower A"></div>
+        <div class="field"><label>Floor / desk / seat *</label><input id="afFloor" placeholder="e.g. 3rd Floor, Desk 42"></div>
+        <button class="btn block soft" onclick="saveAddress()">Save address</button>
+      </div>`;
+  } else if(orderType==='DINE_IN'){
+    html += `<div class="section-title">Table details</div>
+      <div class="field"><label>Table number *</label><input id="ctxTable" placeholder="e.g. T5" value="${savedTable}"></div>
+      <div class="field"><label>Your name (optional)</label><input id="ctxName" placeholder="${api.user?.name||''}" value="${savedCtxName}"></div>`;
+  } else if(orderType==='TAKEAWAY'){
+    html += `<div class="section-title">Pickup details</div>
+      <div class="field"><label>Name *</label><input id="ctxName" value="${savedCtxName || api.user?.name||''}"></div>
+      <div class="field"><label>Phone *</label><input id="ctxPhone" inputmode="tel" value="${savedCtxPhone || api.user?.phone||''}"></div>`;
+  }
+  // Special request
   html += `<div class="section-title">Special requests for the kitchen (optional)</div>
-    <div class="field"><textarea id="dSpecial" placeholder="e.g. less spicy, no onions, extra napkins">${savedSpecial}</textarea></div>
-    <div class="section-title">Delivery note (optional)</div>
-    <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival, near reception">${savedNote}</textarea></div>`;
-  // bill
+    <div class="field"><textarea id="dSpecial" placeholder="e.g. less spicy, no onions, extra napkins">${savedSpecial}</textarea></div>`;
+  if(orderType==='DELIVERY'){
+    html += `<div class="section-title">Delivery note (optional)</div>
+      <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival, near reception">${savedNote}</textarea></div>`;
+  }
+  // Bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
     <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-disc)*0.05))}</span></div>
-    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>
-    <div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>`;
+  // Action button
+  if(paymentMethod==='ONLINE'){
+    html += `<div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
+  } else {
+    html += `<div style="margin-top:16px"><button class="btn block" onclick="placeCounterOrder()">Place order (pay at counter) →</button></div>`;
+  }
   $('#cartBody').innerHTML = html;
 }
 let savedSpecial = '', savedNote = '';
+let savedTable = '', savedCtxName = '', savedCtxPhone = '';
 function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id) : null; renderCart(); }
 function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
+function stashContext(){ const t=$('#ctxTable'), n=$('#ctxName'), p=$('#ctxPhone'); if(t) savedTable=t.value; if(n) savedCtxName=n.value; if(p) savedCtxPhone=p.value; }
+function setOrderType(t){ stashNotes(); stashContext(); orderType=t; if(t==='DELIVERY') paymentMethod='ONLINE'; renderCart(); }
+function setPaymentMethod(m){ stashNotes(); stashContext(); paymentMethod=m; renderCart(); }
 function estimateDiscount(deal, sub){
   let d = deal.discountType==='flat' ? deal.discountValue : sub*deal.discountValue/100;
   if(deal.discountType==='percent' && deal.maxDiscountAmount) d=Math.min(d, deal.maxDiscountAmount);
-  return Math.min(d, sub*0.15);
+  return Math.min(d, sub);
 }
 
-/* ---------- PAYMENT ---------- */
-let pendingDelivery = null, pendingSpecial = '';
+/* ---------- BUILD CONTEXT ---------- */
+function buildContext(){
+  stashNotes(); stashContext();
+  if(orderType==='DELIVERY'){
+    const addr = ADDRESSES.find(a=>a.id===selectedAddressId);
+    if(!addr){ toast('Choose or add a delivery address'); return null; }
+    return { deliveryName:addr.deliveryName, deliveryPhone:addr.deliveryPhone, buildingName:addr.buildingName, floorSeat:addr.floorSeat, deliveryNotes:savedNote.trim()||undefined };
+  } else if(orderType==='DINE_IN'){
+    const table = savedTable.trim();
+    if(!table){ toast('Enter your table number'); return null; }
+    return { tableNumber:table, deliveryName:savedCtxName.trim()||api.user?.name||'' };
+  } else {
+    const name = (savedCtxName||'').trim() || api.user?.name || '';
+    const phone = (savedCtxPhone||'').trim() || api.user?.phone || '';
+    if(!name||!phone){ toast('Enter your name and phone for pickup'); return null; }
+    return { deliveryName:name, deliveryPhone:phone };
+  }
+}
+
+/* ---------- PAYMENT (ONLINE) ---------- */
 async function goToPayment(){
+  const context = buildContext(); if(!context) return;
   stashNotes();
-  const addr = ADDRESSES.find(a=>a.id===selectedAddressId);
-  if(!addr){ toast('Choose or add a delivery address'); document.getElementById('addrForm')?.classList.add('show'); return; }
-  pendingDelivery = { deliveryName:addr.deliveryName, deliveryPhone:addr.deliveryPhone, buildingName:addr.buildingName, floorSeat:addr.floorSeat, deliveryNotes:savedNote.trim() };
-  pendingSpecial = savedSpecial.trim();
-  try{ await api.post('/orders/validate-delivery', { delivery: pendingDelivery }); }
-  catch(e){ toast(e.message.replace(/\n/g,' ')); return; }
   go('pay');
   $('#payBody').innerHTML = `<div class="empty">Generating secure UPI QR…</div>`;
   try{
@@ -489,18 +597,35 @@ async function renderPayment(qr){
 async function placeOrder(){
   const transactionId = $('#txnId').value.trim();
   if(!transactionId){ toast('Enter the UPI transaction ID'); return; }
+  const context = buildContext(); if(!context) return;
   const btn=$('#placeBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   try{
-    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), delivery: pendingDelivery, transactionId };
-    if(pendingSpecial) payload.specialRequest = pendingSpecial;
+    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'ONLINE', context, transactionId };
+    if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
     if(selectedDeal) payload.dealCode = selectedDeal.id;
     const order = await api.post('/orders', payload);
     currentOrderId = order.id;
-    CART={}; selectedDeal=null; savedSpecial=''; savedNote='';
-    refreshOrdersBadge();
-    go('track');
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
+    refreshOrdersBadge(); go('track');
     toast('Order placed! Awaiting payment verification.');
   }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="I've paid — place order"; }
+}
+
+/* ---------- COUNTER PAYMENT ---------- */
+async function placeCounterOrder(){
+  const context = buildContext(); if(!context) return;
+  stashNotes();
+  const btn = event.target; btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  try{
+    const payload = { items: cartItems().map(c=>({menuItemId:c.item.id, quantity:c.qty, variant:c.variant||undefined})), orderType, paymentMethod:'COUNTER', context };
+    if(savedSpecial.trim()) payload.specialRequest = savedSpecial.trim();
+    if(selectedDeal) payload.dealCode = selectedDeal.id;
+    const order = await api.post('/orders', payload);
+    currentOrderId = order.id;
+    CART={}; selectedDeal=null; savedSpecial=''; savedNote=''; savedTable=''; savedCtxName=''; savedCtxPhone='';
+    refreshOrdersBadge(); go('track');
+    toast('Order placed! Pay at the counter.');
+  }catch(e){ toast(e.message.replace(/\n/g,' ')); btn.disabled=false; btn.textContent="Place order (pay at counter) →"; }
 }
 
 /* ---------- ORDERS TAB ---------- */
@@ -531,7 +656,7 @@ function stopOrdersPolling(){ clearInterval(ordersTimer); ordersTimer=null; }
 async function refreshOrdersBadge(){
   try{
     const resp = await api.get('/orders?limit=10');
-    const active = (resp.orders||[]).filter(o=>!['delivered','cancelled','payment_expired'].includes(o.status)).length;
+    const active = (resp.orders||[]).filter(o=>!['delivered','completed','cancelled','payment_expired'].includes(o.status)).length;
     const b=$('#ordersBadge'); b.style.display=active?'flex':'none'; b.textContent=active;
   }catch{}
 }
@@ -574,13 +699,15 @@ async function renderTrack(){
   if(!currentOrderId) return;
   let order; try{ order = await api.get('/orders/'+currentOrderId); }catch{ return; }
   const cancelled = order.status==='cancelled' || order.status==='payment_expired';
+  const completed = order.status==='completed' || order.status==='delivered';
   const curIdx = flowIndex(order.status);
   const itemsLine = order.items.reduce((s,i)=>s+i.quantity,0);
+  const typeLabel = order.orderType==='DINE_IN'?'Dine-in':order.orderType==='TAKEAWAY'?'Takeaway':'Delivery';
   let html = `<div class="order-id">#${order.orderNumber}</div>
-    <div class="order-sub">${itemsLine} items · ${rupee(order.financials.customerPays)} · ${order.delivery.building}</div>`;
-  if(order.status==='delivered'){ html += `<div class="celebrate show"><div style="font-size:26px">✓</div><b>Delivered — enjoy your meal!</b></div>`; }
+    <div class="order-sub">${itemsLine} items · ${rupee(order.financials.customerPays)} · ${typeLabel}</div>`;
+  if(completed){ html += `<div class="celebrate show"><div style="font-size:26px">✓</div><b>${order.status==='delivered'?'Delivered':'Completed'} — enjoy your meal!</b></div>`; }
   if(cancelled){ html += `<div class="cancel-banner show">This order was ${(STATUS_LABEL[order.status]||order.status).toLowerCase()}.</div>`; }
-  if(!cancelled){
+  if(!cancelled && !completed){
     html += `<div class="progress">` + FLOW.map((f,i)=>{
       const cls = i<curIdx?'done':i===curIdx?'cur':'pending';
       return `<div class="pstep ${cls}"><div class="dotcol"><div class="pdot">${i<curIdx?'✓':i+1}</div><div class="pline"></div></div>
@@ -597,7 +724,7 @@ async function renderTrack(){
     ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
     ${order.financials.taxAmount>0?`<div class="bill-row"><span>Tax (5%)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
     <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>
-    <div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.delivery.floorSeat}, ${order.delivery.building}</div>
+    ${order.orderType==='DELIVERY'&&order.delivery?.building?`<div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.delivery.floorSeat}, ${order.delivery.building}</div>`:''}
     <div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;
   $('#trackBody').innerHTML = html;
 }

@@ -98,6 +98,7 @@
     ready: 'Ready',
     out_for_delivery: 'Out for delivery',
     delivered: 'Delivered',
+    completed: 'Completed',
     cancelled: 'Cancelled',
     payment_expired: 'Payment expired',
   };

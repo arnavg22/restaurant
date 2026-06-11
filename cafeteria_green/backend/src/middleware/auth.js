@@ -12,11 +12,16 @@ const prisma = new PrismaClient();
  */
 export function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const queryToken = req.query?.token;
+    
+    let token;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    } else if (queryToken) {
+        token = queryToken;
+    } else {
         return res.status(401).json({ error: 'Authentication required', code: 'NO_TOKEN' });
     }
-
-    const token = authHeader.split(' ')[1];
 
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);

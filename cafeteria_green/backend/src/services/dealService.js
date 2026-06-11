@@ -10,20 +10,9 @@ const prisma = new PrismaClient();
 /**
  * Create a new deal. Only developers can do this.
  *
- * CRITICAL RULE: The discount comes from the platform's 15% share only.
- * The restaurant's revenue is NEVER reduced by a deal.
- *
- * Math:
- *   If order subtotal = ₹1000
- *   Platform's share = ₹150 (15%)
- *   Deal: "₹100 off"
- *   → Discount applied = ₹100 (from platform's ₹150)
- *   → Platform earns = ₹150 - ₹100 = ₹50
- *   → Restaurant still gets ₹850 (unchanged)
- *   → Customer pays = ₹900
- *
- *   Deal is INVALID if discount > platform's 15% share
- *   (e.g., can't give ₹200 off on ₹1000 order — max is ₹150)
+ * Deals are promotional — the discount does NOT come from the platform's 4% share.
+ * The discount reduces the restaurant's share (restaurant absorbs the deal cost).
+ * Platform/developer always earns their full 4% regardless of deals.
  */
 export async function createDeal(developerId, dealData) {
     const {
