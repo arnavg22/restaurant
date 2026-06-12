@@ -93,8 +93,13 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSub
  * Calculate discount for a specific deal on an order.
  * Returns the discount amount. Deals are now absorbed by the restaurant,
  * not capped by the platform's share.
+ *
+ * NOTE: Combos are NOT eligible for discounts. Pass `discountableSubtotal`
+ * (the cart subtotal excluding any Combo items) so percent discounts apply
+ * only to the non-combo portion and flat discounts are capped to it.
+ * The deal's minimum-order qualification still uses the full `subtotal`.
  */
-export function calculateDealDiscount(deal, subtotal, userId) {
+export function calculateDealDiscount(deal, subtotal, userId, discountableSubtotal = subtotal) {
     // Check if deal is valid
     const now = new Date();
     if (!deal.isActive) return 0;
@@ -102,20 +107,24 @@ export function calculateDealDiscount(deal, subtotal, userId) {
     if (deal.maxTotalUses && deal.currentUses >= deal.maxTotalUses) return 0;
     if (subtotal < parseFloat(deal.minOrderAmount)) return 0;
 
+    // No discount applies to combo items — only the non-combo subtotal is eligible.
+    const eligible = Math.max(0, discountableSubtotal);
+    if (eligible <= 0) return 0;
+
     let discount = 0;
 
     if (deal.discountType === 'flat') {
         discount = parseFloat(deal.discountValue);
     } else if (deal.discountType === 'percent') {
-        discount = subtotal * (parseFloat(deal.discountValue) / 100);
+        discount = eligible * (parseFloat(deal.discountValue) / 100);
         // Apply max cap if set
         if (deal.maxDiscountAmount) {
             discount = Math.min(discount, parseFloat(deal.maxDiscountAmount));
         }
     }
 
-    // Discount cannot exceed the subtotal itself
-    discount = Math.min(discount, subtotal);
+    // Discount cannot exceed the eligible (non-combo) subtotal.
+    discount = Math.min(discount, eligible);
 
     return roundMoney(discount);
 }
@@ -159,6 +168,8 @@ export function parseVariants(v) {
  * Non-variant items use base price minus the per-item developer discount.
  */
 export function resolveLine(menuItem, variantName) {
+    // Combos are never discounted (no developer per-item discount).
+    const isCombo = menuItem.section === 'Combo';
     const variants = parseVariants(menuItem.variants);
     if (variants.length) {
         if (!variantName) {
@@ -166,13 +177,14 @@ export function resolveLine(menuItem, variantName) {
         }
         const v = variants.find(x => x.name === variantName);
         if (!v) throw new AppError(`Invalid option for ${menuItem.name}`, 400, 'INVALID_VARIANT');
-        return { unitPrice: v.price, itemName: `${menuItem.name} · ${v.name}`, variant: v.name, devDiscount: 0 };
+        return { unitPrice: v.price, itemName: `${menuItem.name} · ${v.name}`, variant: v.name, devDiscount: 0, isCombo };
     }
     return {
         unitPrice: parseFloat(menuItem.price),
         itemName: menuItem.name,
         variant: null,
-        devDiscount: clampDevDiscount(menuItem.price, menuItem.developerDiscount)
+        devDiscount: isCombo ? 0 : clampDevDiscount(menuItem.price, menuItem.developerDiscount),
+        isCombo
     };
 }
 
