@@ -7,6 +7,8 @@ import {
     PLATFORM_FEE_RATE,
     RESTAURANT_SHARE_RATE,
     TAX_RATE,
+    DEFAULT_GST_RATE,
+    DEFAULT_VAT_RATE,
     STATUS_TRANSITIONS,
     STATUS_AUTHORIZERS,
     ORDER_PAYMENT_TIMEOUT,
@@ -47,17 +49,33 @@ const prisma = new PrismaClient();
  * Developer gets 4% of what the customer actually pays (after discount, before tax).
  * Restaurant gets the rest.
  *
+ * TAX: two regimes apply depending on the item.
+ *   - VAT (default 18%) on alcohol items (Bar section)
+ *   - GST (default 5%)  on every other item (Food / Combo)
+ * The order discount is allocated proportionally between the alcohol and
+ * non-alcohol portions before tax is applied to each.
+ *
+ * `taxOpts`:
+ *   - alcoholSubtotal : ₹ value of alcohol (Bar) items in the cart (pre-discount)
+ *   - gstRate / vatRate : tax fractions (e.g. 0.05, 0.18). Default to constants.
+ *
  * ┌────────────────────────────────────────────────────┐
  * │  subtotal       = Σ(item.price × quantity)         │
  * │  discount       = applied deal/promo discount      │
  * │  afterDiscount  = subtotal - discount              │
  * │  platform_fee   = afterDiscount × 0.04             │
  * │  restaurant_share = afterDiscount - platform_fee   │
- * │  tax            = afterDiscount × 0.05             │
+ * │  tax            = VAT(alcohol) + GST(non-alcohol)  │
  * │  customer_pays  = afterDiscount + tax              │
  * └────────────────────────────────────────────────────┘
  */
-export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0) {
+export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0, taxOpts = {}) {
+    const {
+        alcoholSubtotal = 0,
+        gstRate = DEFAULT_GST_RATE,
+        vatRate = DEFAULT_VAT_RATE
+    } = taxOpts;
+
     const cappedDiscount = roundMoney(Math.max(0, Math.min(discountAmount, subtotal)));
 
     // After discount = what the customer is actually paying (before tax)
@@ -73,14 +91,26 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSub
     // Restaurant gets the rest
     const restaurantShare = roundMoney(afterDiscount - platformFee);
 
-    // 5% tax on afterDiscount
-    const taxAmount = roundMoney(afterDiscount * TAX_RATE);
+    // ── Split tax: VAT on alcohol portion, GST on the rest ──
+    // Discount is allocated proportionally so each portion is taxed on its
+    // own after-discount value.
+    const safeAlcohol = roundMoney(Math.max(0, Math.min(alcoholSubtotal, subtotal)));
+    const alcoholFraction = subtotal > 0 ? safeAlcohol / subtotal : 0;
+    const alcoholAfterDiscount = roundMoney(afterDiscount * alcoholFraction);
+    const nonAlcoholAfterDiscount = roundMoney(afterDiscount - alcoholAfterDiscount);
+
+    const vatAmount = roundMoney(alcoholAfterDiscount * vatRate);
+    const gstAmount = roundMoney(nonAlcoholAfterDiscount * gstRate);
+    const taxAmount = roundMoney(vatAmount + gstAmount);
+
     const customerPays = roundMoney(afterDiscount + taxAmount);
 
     return {
         subtotal: roundMoney(subtotal),
         discountAmount: cappedDiscount,
         taxAmount,
+        gstAmount,
+        vatAmount,
         customerPays,
         platformFee,
         discountFromPlatform: 0,

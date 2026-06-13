@@ -25,6 +25,7 @@ async function main() {
         { email: 'admin', name: 'Restaurant Admin', role: 'admin', phone: '9000000001' },
         { email: 'kitchen', name: 'Kitchen Staff', role: 'kitchen', phone: '9000000002' },
         { email: 'developer', name: 'Platform Developer', role: 'developer', phone: '9000000003' },
+        { email: 'discount', name: 'Discount Manager', role: 'discount', phone: '9000000004' },
     ];
 
     for (const u of users) {
@@ -54,13 +55,16 @@ async function main() {
     let sortOrder = 0;
     for (const item of allItems) {
         sortOrder++;
+        const section = item.section || 'Food';
         await prisma.menuItem.create({
             data: {
                 name: item.name,
                 description: item.description || null,
                 price: item.price,
                 category: item.category,
-                section: item.section || 'Food',
+                section,
+                // Bar (alcohol) items are dine-in only by default; Food/Combo are delivery-available.
+                deliveryAvailable: item.deliveryAvailable !== undefined ? item.deliveryAvailable : section !== 'Bar',
                 variants: item.variants || null,
                 isAvailable: item.isAvailable !== false,
                 sortOrder,

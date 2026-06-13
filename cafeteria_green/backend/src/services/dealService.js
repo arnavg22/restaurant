@@ -77,16 +77,18 @@ export async function createDeal(developerId, dealData) {
 }
 
 /**
- * Update an existing deal. Only developers can do this.
+ * Update an existing deal.
+ * By default only the creator can update a deal; pass { enforceOwner: false }
+ * (used by the Discount Panel) to allow managing any deal.
  */
-export async function updateDeal(dealId, developerId, updates) {
+export async function updateDeal(dealId, developerId, updates, { enforceOwner = true } = {}) {
     const deal = await prisma.deal.findUnique({ where: { id: dealId } });
 
     if (!deal) {
         throw new AppError('Deal not found', 404, 'DEAL_NOT_FOUND');
     }
 
-    if (deal.createdBy !== developerId) {
+    if (enforceOwner && deal.createdBy !== developerId) {
         throw new AppError('You can only update deals you created', 403, 'FORBIDDEN');
     }
 
@@ -119,8 +121,8 @@ export async function updateDeal(dealId, developerId, updates) {
 /**
  * Deactivate a deal (soft delete).
  */
-export async function deactivateDeal(dealId, developerId) {
-    return updateDeal(dealId, developerId, { isActive: false });
+export async function deactivateDeal(dealId, developerId, opts) {
+    return updateDeal(dealId, developerId, { isActive: false }, opts);
 }
 
 /**

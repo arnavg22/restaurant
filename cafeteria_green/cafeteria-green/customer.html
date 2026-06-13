@@ -253,6 +253,7 @@
 const { CGApi, rupee, toast, STATUS_LABEL } = CG;
 const api = CGApi('customer');
 let MENU = [], CART = {}, DEALS = [], selectedDeal = null, activeSection = 'Food';
+let TAX = { gst: 5, vat: 18 }; // tax rates (%) — GST on non-alcohol, VAT on alcohol (Bar)
 let ADDRESSES = [], selectedAddressId = null;
 let currentOrderId = null, trackTimer = null, ordersTimer = null, socket = null;
 let orderType = 'DELIVERY'; // DELIVERY | DINE_IN | TAKEAWAY
@@ -311,7 +312,7 @@ async function enterApp(){
   $('#menuHello').textContent = 'Hi ' + (api.user?.name?.split(' ')[0] || 'there');
   connectRealtime();
   await loadMenu();
-  loadDeals(); loadAddresses(); loadPoints(); refreshOrdersBadge();
+  loadDeals(); loadAddresses(); loadPoints(); refreshOrdersBadge(); loadTaxRates();
   go('menu');
 }
 function connectRealtime(){
@@ -325,7 +326,7 @@ function connectRealtime(){
 /* ---------- MENU ---------- */
 async function loadMenu(){ try{ MENU = await api.get('/menu'); renderMenu(); }catch(e){ $('#menuBody').innerHTML = `<div class="empty">Couldn't load menu: ${e.message}</div>`; } }
 async function loadDeals(){ try{ DEALS = await api.get('/orders/deals'); }catch{ DEALS=[]; } }
-async function loadPoints(){ try{ const d = await api.get('/orders/points'); cafePoints = d.points; }catch{ cafePoints=0; } }
+async function loadTaxRates(){ try{ const t = await api.get('/settings/tax'); TAX = { gst: Number(t.gst_rate)||0, vat: Number(t.vat_rate)||0 }; }catch{ /* keep defaults */ } }async function loadPoints(){ try{ const d = await api.get('/orders/points'); cafePoints = d.points; }catch{ cafePoints=0; } }
 
 function setSection(sec){
   activeSection = sec;
@@ -553,15 +554,30 @@ function renderCart(){
   }
   const pointsDisc = usePoints ? Math.min(pointsValue, sub - disc) : 0;
   const totalDisc = disc + pointsDisc;
+  // Tax: VAT on alcohol (Bar) items, GST on the rest. Discount allocated proportionally.
+  const afterDisc = Math.max(0, sub - totalDisc);
+  const alcoholSub = cartItems().reduce((s,c)=> s + (c.item.section==='Bar' ? c.unitPrice*c.qty : 0), 0);
+  const alcoholFrac = sub>0 ? alcoholSub/sub : 0;
+  const alcoholAfter = afterDisc * alcoholFrac;
+  const nonAlcoholAfter = afterDisc - alcoholAfter;
+  const gstTax = nonAlcoholAfter * (TAX.gst/100);
+  const vatTax = alcoholAfter * (TAX.vat/100);
+  const taxTotal = gstTax + vatTax;
+  const toPay = afterDisc + taxTotal;
   // Bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
     ${pointsDisc>0?`<div class="bill-row" style="color:var(--citrus)"><span>Points discount (${Math.round(pointsDisc*10)} pts)</span><span>−${rupee(pointsDisc)}</span></div>`:''}
-    <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-totalDisc)*0.05))}</span></div>
-    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-totalDisc)*1.05))}</span></div>
+    ${gstTax>0?`<div class="bill-row"><span>GST (${TAX.gst}%)</span><span>${rupee(Math.round(gstTax))}</span></div>`:''}
+    ${vatTax>0?`<div class="bill-row"><span>VAT (${TAX.vat}%)</span><span>${rupee(Math.round(vatTax))}</span></div>`:''}
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round(toPay))}</span></div>
     <div class="bill-row" style="font-size:12px;color:var(--leaf-deep)"><span>🪙 You'll earn ${Math.floor((sub-totalDisc)/10)} points on this order</span></div></div>`;
   // Action button
-  if(paymentMethod==='ONLINE'){
+  const hasDineInOnly = cartItems().some(c => c.item.deliveryAvailable === false);
+  if(hasDineInOnly && orderType !== 'DINE_IN'){
+    html += `<div class="cancel-banner show" style="margin-top:16px">🍽 Some items in your cart are <b>Dine-in only</b> — not available for delivery or takeaway. Switch to Dine-in, or remove those items to continue.</div>
+      <div style="margin-top:12px"><button class="btn block" disabled style="opacity:.5;cursor:not-allowed">Continue →</button></div>`;
+  } else if(paymentMethod==='ONLINE'){
     html += `<div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
   } else {
     html += `<div style="margin-top:16px"><button class="btn block" onclick="placeCounterOrder()">Place order (pay at counter) →</button></div>`;
@@ -574,7 +590,13 @@ function pickDeal(id){ stashNotes(); selectedDeal = id ? DEALS.find(d=>d.id===id
 function togglePoints(){ stashNotes(); stashContext(); usePoints = !usePoints; renderCart(); }
 function stashNotes(){ const s=$('#dSpecial'), n=$('#dNotes'); if(s) savedSpecial=s.value; if(n) savedNote=n.value; }
 function stashContext(){ const t=$('#ctxTable'), n=$('#ctxName'), p=$('#ctxPhone'); if(t) savedTable=t.value; if(n) savedCtxName=n.value; if(p) savedCtxPhone=p.value; }
-function setOrderType(t){ stashNotes(); stashContext(); orderType=t; if(t==='DELIVERY') paymentMethod='ONLINE'; renderCart(); }
+function setOrderType(t){
+  stashNotes(); stashContext(); orderType=t; if(t==='DELIVERY') paymentMethod='ONLINE';
+  if(t!=='DINE_IN' && cartItems().some(c=>c.item.deliveryAvailable===false)){
+    toast('Some items are dine-in only. Choose Dine-in or remove them.');
+  }
+  renderCart();
+}
 function setPaymentMethod(m){ stashNotes(); stashContext(); paymentMethod=m; renderCart(); }
 function estimateDiscount(deal, sub){
   let d = deal.discountType==='flat' ? deal.discountValue : sub*deal.discountValue/100;
@@ -583,6 +605,13 @@ function estimateDiscount(deal, sub){
 }
 
 /* ---------- BUILD CONTEXT ---------- */
+function alcoholDineInOk(){
+  if(orderType!=='DINE_IN' && cartItems().some(c=>c.item.deliveryAvailable===false)){
+    toast('Some items are dine-in only. Switch to Dine-in or remove them.');
+    return false;
+  }
+  return true;
+}
 function buildContext(){
   stashNotes(); stashContext();
   if(orderType==='DELIVERY'){
@@ -603,6 +632,7 @@ function buildContext(){
 
 /* ---------- PAYMENT (ONLINE) ---------- */
 async function goToPayment(){
+  if(!alcoholDineInOk()) return;
   const context = buildContext(); if(!context) return;
   stashNotes();
   go('pay');
@@ -647,6 +677,7 @@ async function placeOrder(){
 
 /* ---------- COUNTER PAYMENT ---------- */
 async function placeCounterOrder(){
+  if(!alcoholDineInOk()) return;
   const context = buildContext(); if(!context) return;
   stashNotes();
   const btn = event.target; btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
@@ -757,7 +788,7 @@ async function renderTrack(){
   if(order.specialRequest){ html += `<div class="spec-box">⚠ Special request: ${order.specialRequest}</div>`; }
   html += `<div class="bill">${order.items.map(i=>`<div class="bill-row"><span>${i.quantity}× ${i.name}</span><span>${rupee(i.total)}</span></div>`).join('')}
     ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
-    ${order.financials.taxAmount>0?`<div class="bill-row"><span>Tax (5%)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
+    ${order.financials.taxAmount>0?`<div class="bill-row"><span>Taxes (GST/VAT)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
     <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>
     ${order.orderType==='DELIVERY'&&order.delivery?.building?`<div class="muted" style="font-size:12px;text-align:center;margin-top:10px">Delivery to ${order.delivery.floorSeat}, ${order.delivery.building}</div>`:''}
     <div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;

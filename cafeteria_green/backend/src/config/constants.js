@@ -4,7 +4,13 @@
 
 export const PLATFORM_FEE_RATE = parseFloat(process.env.PLATFORM_FEE_RATE || '0.04');
 export const RESTAURANT_SHARE_RATE = 1 - PLATFORM_FEE_RATE; // 0.96
-export const TAX_RATE = parseFloat(process.env.TAX_RATE || '0.05'); // 5% tax on order subtotal
+export const TAX_RATE = parseFloat(process.env.TAX_RATE || '0.05'); // legacy single tax (fallback)
+// Two tax regimes:
+//   GST → applied to non-alcohol items (Food / Combo) — default 5%
+//   VAT → applied to alcohol items (Bar section)       — default 18%
+// These defaults are overridable by the admin via Settings (stored in the DB).
+export const DEFAULT_GST_RATE = parseFloat(process.env.GST_RATE || '0.05'); // 5%
+export const DEFAULT_VAT_RATE = parseFloat(process.env.VAT_RATE || '0.18'); // 18%
 export const ORDER_PAYMENT_TIMEOUT = parseInt(process.env.ORDER_PAYMENT_TIMEOUT_MINUTES || '10');
 
 // Valid status transitions

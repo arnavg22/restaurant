@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cafeteria Green — Discount Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="cg.css">
+<style>
+.dheader{background:linear-gradient(100deg,var(--slate),var(--slate-2));color:#fff;padding:16px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.dh-left{display:flex;align-items:center;gap:12px}
+.dh-left .ic{width:40px;height:40px;border-radius:11px;background:var(--leaf);display:flex;align-items:center;justify-content:center}
+.dh-left b{font-family:'Bricolage Grotesque';font-size:17px;display:block}
+.dh-left small{font-size:11px;opacity:.7}
+.dh-right{display:flex;align-items:center;gap:16px;font-size:12.5px}
+.dh-right .clock{font-family:'Bricolage Grotesque';font-size:16px;font-weight:700}
+.dh-right .logout{background:rgba(255,255,255,.14);border-radius:8px;padding:7px 12px;color:#fff;font-weight:600;font-size:12px}
+.wrap{padding:24px 26px 60px;max-width:1400px;margin:0 auto}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tabs button{height:38px;padding:0 16px;border-radius:10px;background:var(--panel-2);color:var(--ink-soft);font-weight:600;font-size:13.5px}
+.tabs button.sel{background:var(--slate);color:#fff}
+.view{display:none}.view.active{display:block}
+.card h3{font-size:16px;margin-bottom:14px}
+.logwrap{overflow-x:auto}
+table.mm{width:100%;border-collapse:collapse;font-size:13px}
+table.mm th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);border-bottom:2px solid var(--line);white-space:nowrap}
+table.mm td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+table.mm input.mm-price{width:90px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px}
+.deal{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.deal.off{opacity:.55}
+.deal-h{display:flex;justify-content:space-between;align-items:flex-start}
+.deal b{font-size:14.5px}.deal .meta{font-size:12.5px;color:var(--ink-faint);margin-top:3px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.dealform{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px}
+.dealform .full{grid-column:1/-1}
+.addbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.addbar .field{margin:0}
+.switch{position:relative;display:inline-block;width:42px;height:24px}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;cursor:pointer;inset:0;background:var(--line);border-radius:24px;transition:.2s}
+.switch .sl:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .sl{background:var(--leaf)}
+.switch input:checked + .sl:before{transform:translateX(18px)}
+@media(max-width:768px){
+  .dheader{padding:12px 16px;flex-wrap:wrap;gap:8px}
+  .wrap{padding:16px 14px 40px}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .tabs button{white-space:nowrap;flex:0 0 auto}
+  .logwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.mm{min-width:640px}
+  .dealform{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="lm" style="background:var(--slate)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M7 7h10v10M7 17L17 7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.6" fill="#fff"/><circle cx="16" cy="16" r="1.6" fill="#fff"/></svg></div>
+    <h1>Discount Panel</h1><div class="role-tag">Cafeteria Green · Schemes, menu &amp; discounts</div>
+    <div class="login-err" id="err"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="discount"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" placeholder="••••••••"></div>
+    <button class="btn block dark" id="loginBtn" onclick="doLogin()">Log in</button>
+    <div class="powered">Powered by <b>BazaarDeal</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="hidden" id="app">
+  <div class="dheader">
+    <div class="dh-left"><div class="ic"><svg class="leaf-svg" viewBox="0 0 24 24" fill="none"><path d="M5 14c0-6 8-9 14-9 0 8-5 13-11 13-3 0-3-4-3-4z" fill="#fff"/></svg></div><div><b>Cafeteria Green</b><small>Discount Panel</small></div></div>
+    <div class="dh-right"><span class="clock" id="clock">--:--</span><span id="who">Discount Manager</span><button class="logout" onclick="logout()">Log out</button></div>
+  </div>
+  <div class="wrap">
+    <div class="tabs" id="tabs">
+      <button data-view="deals" class="sel">Discount Schemes</button>
+      <button data-view="menu">Menu</button>
+      <button data-view="pricing">Per-item Discounts</button>
+    </div>
+
+    <!-- SCHEMES -->
+    <div class="view active" id="view-deals">
+      <div class="card"><h3>New discount scheme <span class="muted" style="font-weight:400;font-size:12px">(applies to non-combo items)</span></h3>
+        <div class="dealform">
+          <div class="field"><label>Discount type</label><select id="dlType" onchange="dlTypeChanged()"><option value="flat">Flat amount (₹)</option><option value="percent">Percentage (%)</option></select></div>
+          <div class="field"><label id="dlValueLabel">Amount off (₹)</label><input id="dlValue" type="number" placeholder="e.g. 40"></div>
+          <div class="field"><label>Minimum order value (₹)</label><input id="dlMin" type="number" value="0" placeholder="e.g. 250"></div>
+          <div class="field"><label>Max discount cap (₹) <span class="muted">percent only</span></label><input id="dlMax" type="number" placeholder="optional" disabled></div>
+          <div class="field"><label>Expires on</label><input id="dlExp" type="date"></div>
+          <div class="field"><label>Max uses per customer</label><input id="dlPerUser" type="number" value="1"></div>
+          <div class="field full"><label>Title <span class="muted">(optional — auto-generated if blank)</span></label><input id="dlTitle" placeholder="e.g. ₹40 off above ₹250"></div>
+        </div>
+        <button class="btn" onclick="createDeal()">Create scheme</button>
+      </div>
+      <div style="margin-top:18px" id="dealList"></div>
+    </div>
+
+    <!-- MENU -->
+    <div class="view" id="view-menu">
+      <div class="card" style="margin-bottom:16px">
+        <h3 style="margin-bottom:10px">Add a menu item</h3>
+        <div class="addbar" id="addbar"></div>
+      </div>
+      <div class="card logwrap" id="mmWrap"></div>
+    </div>
+
+    <!-- PER-ITEM DISCOUNTS -->
+    <div class="view" id="view-pricing">
+      <div class="card" style="margin-bottom:16px"><h3 style="margin-bottom:4px">Per-item promotional discounts</h3>
+        <div class="muted" style="font-size:13px">Set a discount per item to reduce the customer-visible price. <b>Visible price = base − discount</b>.</div></div>
+      <div class="card logwrap"><table class="mm" id="pricingTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT EDITOR MODAL -->
+<div class="vmodal" id="varModal">
+  <div class="vmodal-card">
+    <h3 id="veTitle" style="margin-bottom:12px">Options</h3>
+    <div id="veRows"></div>
+    <button class="btn sm soft" onclick="veAdd()" style="margin-bottom:14px">+ Add option</button>
+    <div style="display:flex;gap:10px"><button class="btn ghost" style="flex:1" onclick="closeVarEditor()">Cancel</button><button class="btn" style="flex:1" onclick="saveVariants()">Save</button></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="cg-api.js"></script>
+<script>
+const { CGApi, rupee, toast } = CG;
+const api = CGApi('discount');
+const $ = s=>document.querySelector(s);
+let currentView='deals', MENU_ITEMS=[];
+
+function doLogin(){
+  const btn=$('#loginBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  api.login($('#email').value.trim(), $('#pass').value)
+    .then(()=>enterApp())
+    .catch(e=>{ const el=$('#err'); el.textContent=e.message; el.classList.add('show'); btn.disabled=false; btn.textContent='Log in'; });
+}
+function logout(){ api.logout(); location.reload(); }
+
+function enterApp(){
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#who').textContent = api.user?.name || 'Discount Manager';
+  setInterval(()=>{ $('#clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false}); },1000);
+  loadDeals();
+}
+$('#tabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b)return; currentView=b.dataset.view;
+  $('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+currentView).classList.add('active');
+  if(currentView==='deals') loadDeals();
+  if(currentView==='menu') loadMenuMgr();
+  if(currentView==='pricing') loadPricing();
+});
+
+/* ---------- DISCOUNT SCHEMES ---------- */
+function dlTypeChanged(){
+  const isPercent = $('#dlType').value==='percent';
+  $('#dlValueLabel').textContent = isPercent ? 'Percentage off (%)' : 'Amount off (₹)';
+  $('#dlValue').placeholder = isPercent ? 'e.g. 10' : 'e.g. 40';
+  $('#dlMax').disabled = !isPercent;
+  if(!isPercent) $('#dlMax').value = '';
+}
+function autoTitle(type, value, min){
+  return type==='flat' ? `₹${value} off over ₹${min}` : `${value}% off over ₹${min}`;
+}
+async function loadDeals(){
+  try{
+    const deals = await api.get('/discount/deals');
+    const active = deals.filter(d=>d.isActive), inactive = deals.filter(d=>!d.isActive);
+    const row = (d)=>`<div class="deal ${d.isActive?'':'off'}"><div class="deal-h"><div>
+        <b>${d.title}</b><div class="meta">${d.discountType==='flat'?rupee(d.discountValue)+' off':d.discountValue+'% off'}${d.maxDiscountAmount?' (max '+rupee(d.maxDiscountAmount)+')':''} · min order ${rupee(d.minOrderAmount)} · used ${d.totalUsages||0}×</div>
+        <div class="meta">Expires ${new Date(d.expiresAt).toLocaleDateString('en-IN')}</div></div>
+        ${d.isActive?`<button class="btn sm danger" onclick="deactivate('${d.id}')">Deactivate</button>`:`<button class="btn sm soft" onclick="reactivate('${d.id}')">Reactivate</button>`}
+      </div></div>`;
+    $('#dealList').innerHTML =
+      `<h3 style="margin:8px 0 10px">Active schemes (${active.length})</h3>` +
+      (active.length? active.map(row).join('') : '<div class="muted card">No active schemes.</div>') +
+      (inactive.length? `<h3 style="margin:18px 0 10px">Inactive (${inactive.length})</h3>`+inactive.map(row).join('') : '');
+  }catch(e){ $('#dealList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function createDeal(){
+  const discountType=$('#dlType').value, discountValue=parseFloat($('#dlValue').value);
+  const minOrderAmount=parseFloat($('#dlMin').value)||0, maxDiscountAmount=$('#dlMax').value?parseFloat($('#dlMax').value):null;
+  const exp=$('#dlExp').value, maxUsesPerUser=parseInt($('#dlPerUser').value)||1;
+  const title=$('#dlTitle').value.trim() || autoTitle(discountType, discountValue, minOrderAmount);
+  if(!discountValue||!exp){ toast('Enter a value and expiry date'); return; }
+  if(discountType==='percent' && (discountValue<=0||discountValue>100)){ toast('Percentage must be 1–100'); return; }
+  try{
+    await api.post('/discount/deals',{ title, discountType, discountValue, minOrderAmount, maxDiscountAmount, maxUsesPerUser, expiresAt:new Date(exp+'T23:59:59').toISOString() });
+    toast('Scheme created'); $('#dlTitle').value=''; $('#dlValue').value=''; $('#dlMax').value=''; loadDeals();
+  }catch(e){ toast(e.message); }
+}
+async function deactivate(id){ try{ await api.patch('/discount/deals/'+id+'/deactivate'); toast('Deactivated'); loadDeals(); }catch(e){ toast(e.message); } }
+async function reactivate(id){ try{ await api.put('/discount/deals/'+id, { isActive:true }); toast('Reactivated'); loadDeals(); }catch(e){ toast(e.message); } }
+
+/* ---------- MENU MANAGER ---------- */
+async function loadMenuMgr(){
+  $('#addbar').innerHTML = `
+    <div class="field"><label>Name</label><input id="niName" placeholder="Dish name"></div>
+    <div class="field"><label>Category</label><input id="niCat" placeholder="e.g. Snacks"></div>
+    <div class="field"><label>Section</label><select id="niSection"><option value="Food">Food</option><option value="Bar">Bar</option><option value="Combo">Combo</option></select></div>
+    <div class="field"><label>Price ₹</label><input id="niPrice" type="number" style="width:90px"></div>
+    <button class="btn sm" onclick="addItem()">+ Add item</button>`;
+  try{
+    MENU_ITEMS = await api.get('/menu/all');
+    const cats={}; MENU_ITEMS.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
+    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>Sizes / options</th><th>Available</th><th>Delivery</th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="6" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(it=>{
+        const nVar = (it.variants||[]).length;
+        html += `<tr><td>${it.name}</td>
+          <td><select class="mm-price" style="width:84px" onchange="updateSection('${it.id}',this.value)">
+            <option value="Food" ${it.section==='Food'||(!it.section)?'selected':''}>Food</option>
+            <option value="Bar" ${it.section==='Bar'?'selected':''}>Bar</option>
+            <option value="Combo" ${it.section==='Combo'?'selected':''}>Combo</option></select></td>
+          <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)" ${nVar?'disabled title="priced by size"':''}></td>
+          <td><button class="btn sm soft" onclick="openVarEditor('${it.id}')">${nVar?nVar+' option'+(nVar>1?'s':''):'+ add'}</button></td>
+          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td>
+          <td><label class="switch" title="On = available for delivery/takeaway, Off = dine-in only"><input type="checkbox" ${it.deliveryAvailable?'checked':''} onchange="toggleDelivery('${it.id}')"><span class="sl"></span></label></td></tr>`;
+      });
+    });
+    html+='</table>'; $('#mmWrap').innerHTML=html;
+  }catch(e){ $('#mmWrap').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function updatePrice(id,val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
+async function updateSection(id,val){ try{ await api.put('/menu/'+id,{section:val}); toast('Section updated'); }catch(e){ toast(e.message); } }
+async function toggleAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); }catch(e){ toast(e.message); } }
+async function toggleDelivery(id){ try{ const r = await api.patch('/menu/'+id+'/delivery'); toast(r.deliveryAvailable?'Delivery enabled':'Delivery off — dine-in only'); }catch(e){ toast(e.message); loadMenuMgr(); } }
+async function addItem(){
+  const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), section=$('#niSection').value, price=parseFloat($('#niPrice').value);
+  if(!name||!category||!price){ toast('Fill name, category, price'); return; }
+  try{ await api.post('/menu',{name,category,section,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
+}
+
+/* ---- variant (size/option) editor ---- */
+let varEditId=null, varRows=[];
+function openVarEditor(id){
+  varEditId=id;
+  const it=MENU_ITEMS.find(x=>x.id===id);
+  varRows = (it.variants||[]).map(v=>({name:v.name, price:v.price}));
+  if(!varRows.length) varRows=[{name:'',price:''}];
+  $('#veTitle').textContent = 'Options · '+it.name;
+  renderVarRows();
+  $('#varModal').classList.add('show');
+}
+function renderVarRows(){
+  $('#veRows').innerHTML = varRows.map((r,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px">
+    <input placeholder="Size / option (e.g. Pint)" value="${(r.name||'').replace(/"/g,'&quot;')}" oninput="veSet(${i},'name',this.value)" style="flex:1;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px">
+    <input type="number" placeholder="₹" value="${r.price}" oninput="veSet(${i},'price',this.value)" style="width:90px;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px">
+    <button class="btn sm danger" onclick="veDel(${i})">✕</button></div>`).join('');
+}
+function veSet(i,k,v){ varRows[i][k]=v; }
+function veDel(i){ varRows.splice(i,1); if(!varRows.length) varRows=[{name:'',price:''}]; renderVarRows(); }
+function veAdd(){ varRows.push({name:'',price:''}); renderVarRows(); }
+function closeVarEditor(){ $('#varModal').classList.remove('show'); varEditId=null; }
+async function saveVariants(){
+  const variants = varRows.map(r=>({name:String(r.name||'').trim(), price:parseFloat(r.price)}))
+    .filter(r=>r.name && !isNaN(r.price) && r.price>0);
+  try{
+    await api.put('/menu/'+varEditId,{ variants });
+    toast(variants.length?`${variants.length} option(s) saved`:'Options cleared');
+    closeVarEditor(); loadMenuMgr();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---------- PER-ITEM DISCOUNTS ---------- */
+async function loadPricing(){
+  try{
+    const rows = await api.get('/discount/pricing');
+    const cats={}; rows.forEach(r=>{ (cats[r.category]=cats[r.category]||[]).push(r); });
+    let html='<tr><th>Item</th><th>Base price</th><th>Discount (₹)</th><th>Customer pays</th><th>Restaurant gets</th></tr>';
+    Object.keys(cats).forEach(cat=>{
+      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      cats[cat].forEach(r=>{
+        if(r.exempt){
+          html += `<tr><td>${r.name}</td><td>${rupee(r.basePrice)}</td><td colspan="3" class="muted">Exempt — discounts not applicable</td></tr>`;
+          return;
+        }
+        html += `<tr id="prow-${r.id}"><td>${r.name}${r.isAvailable?'':' <span class="sbadge s-cancelled">off</span>'}</td>
+          <td>${rupee(r.basePrice)}</td>
+          <td><input type="number" min="0" max="${r.basePrice-1}" step="1" value="${r.developerDiscount}" id="disc-${r.id}"
+                 oninput="previewPricing('${r.id}',${r.basePrice})" style="width:80px;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px"
+                 onchange="saveDiscount('${r.id}')"></td>
+          <td id="vis-${r.id}" style="font-weight:700">${rupee(r.visiblePrice)}</td>
+          <td id="rest-${r.id}">${rupee(r.restaurantShare)}</td></tr>`;
+      });
+    });
+    $('#pricingTable').innerHTML = html;
+  }catch(e){ $('#pricingTable').innerHTML='<tr><td>'+e.message+'</td></tr>'; }
+}
+function previewPricing(id, base){
+  const d = Math.max(0, parseFloat($('#disc-'+id).value)||0);
+  const vis = base - d;
+  const dev = vis * 0.04;
+  const rest = vis - dev;
+  $('#vis-'+id).textContent = rupee(vis);
+  $('#rest-'+id).textContent = rupee(rest);
+}
+async function saveDiscount(id){
+  const developerDiscount = parseFloat($('#disc-'+id).value)||0;
+  try{
+    const r = await api.patch('/discount/pricing/'+id, { developerDiscount });
+    $('#disc-'+id).value = r.developerDiscount;
+    $('#vis-'+id).textContent = rupee(r.visiblePrice);
+    $('#rest-'+id).textContent = rupee(r.restaurantShare);
+    toast('Saved · customers now pay '+rupee(r.visiblePrice));
+  }catch(e){ toast(e.message); loadPricing(); }
+}
+
+if(api.isAuthed()){ api.get('/auth/me').then(()=>enterApp()).catch(()=>api.logout()); }
+</script>
+</body>
+</html>

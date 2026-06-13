@@ -231,13 +231,33 @@ table.mm td{padding:9px 14px;border-bottom:1px solid var(--line-soft);font-size:
         <div class="card logwrap" style="padding:0;overflow-x:auto"><table class="mm" id="logTable"><thead></thead><tbody></tbody></table></div>
       </div>
       <div class="view" id="view-settings">
-        <div class="card" style="max-width: 640px;">
+        <div class="card" style="max-width: 640px;margin-bottom:16px">
           <h3 style="margin-bottom: 10px;">Payment Settings</h3>
           <div class="field">
             <label>UPI ID for accepting payments</label>
             <input id="upiId" placeholder="e.g. restaurant@upi">
           </div>
           <button class="btn" onclick="CG.saveSettings()">Save Settings</button>
+        </div>
+        <div class="card" style="max-width: 640px;">
+          <h3 style="margin-bottom: 4px;">Tax Settings</h3>
+          <div class="muted" style="font-size:12.5px;margin-bottom:12px">
+            VAT applies to alcohol (Bar) items, GST applies to all other items. Defaults are GST 5% and VAT 18% — edit and save as needed.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
+            <div class="field">
+              <label>Tax type</label>
+              <select id="taxType" onchange="CG.onTaxTypeChange()">
+                <option value="gst">GST (non-alcohol items)</option>
+                <option value="vat">VAT (alcohol items)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Rate (%)</label>
+              <input id="taxRate" type="number" step="0.01" min="0" max="100" placeholder="e.g. 5">
+            </div>
+          </div>
+          <button class="btn" onclick="CG.saveTaxSetting()">Save Tax Rate</button>
         </div>
       </div>
     </div>
@@ -307,6 +327,7 @@ $('#nav').addEventListener('click', e=>{ const b=e.target.closest('button'); if(
   if(currentView==='share') loadShare();
   if(currentView==='dash') loadDash();
   if(currentView==='logs') loadLogs('today');
+  if(currentView==='settings') CG.loadSettings();
 });
 
 async function loadDeliveryPersons(){ try{ DELIVERY_PERSONS = await api.get('/admin/delivery-persons'); }catch{ DELIVERY_PERSONS=[]; } }
@@ -423,9 +444,9 @@ async function loadMenuMgr(){
   try{
     MENU_ITEMS = await api.get('/menu/all');
     const cats={}; MENU_ITEMS.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
-    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>Sizes / options</th><th>Available</th></tr>';
+    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>Sizes / options</th><th>Available</th><th>Delivery</th></tr>';
     Object.keys(cats).forEach(cat=>{
-      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      html += `<tr><td colspan="6" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
         const nVar = (it.variants||[]).length;
         html += `<tr><td>${it.name}</td>
@@ -435,7 +456,8 @@ async function loadMenuMgr(){
             <option value="Combo" ${it.section==='Combo'?'selected':''}>Combo</option></select></td>
           <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)" ${nVar?'disabled title="priced by size"':''}></td>
           <td><button class="btn sm soft" onclick="openVarEditor('${it.id}')">${nVar?nVar+' option'+(nVar>1?'s':''):'+ add'}</button></td>
-          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td></tr>`;
+          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td>
+          <td><label class="switch" title="On = available for delivery/takeaway, Off = dine-in only"><input type="checkbox" ${it.deliveryAvailable?'checked':''} onchange="toggleDelivery('${it.id}')"><span class="sl"></span></label></td></tr>`;
       });
     });
     html+='</table>'; $('#mmWrap').innerHTML=html;
@@ -444,7 +466,7 @@ async function loadMenuMgr(){
 async function updatePrice(id,val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
 async function updateSection(id,val){ try{ await api.put('/menu/'+id,{section:val}); toast('Section updated'); }catch(e){ toast(e.message); } }
 async function toggleAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); }catch(e){ toast(e.message); } }
-async function addItem(){
+async function toggleDelivery(id){ try{ const r = await api.patch('/menu/'+id+'/delivery'); toast(r.deliveryAvailable?'Delivery enabled':'Delivery off — dine-in only'); }catch(e){ toast(e.message); loadMenuMgr(); } }async function addItem(){
   const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), section=$('#niSection').value, price=parseFloat($('#niPrice').value);
   if(!name||!category||!price){ toast('Fill name, category, price'); return; }
   try{ await api.post('/menu',{name,category,section,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
@@ -521,14 +543,15 @@ async function loadCombo(){
     if(!combos.length){ $('#comboList').innerHTML='<div class="muted">No combo items yet. Add one above.</div>'; return; }
     const cats = {};
     combos.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
-    let html='<table class="mm"><tr><th>Combo</th><th>Description</th><th>Price (₹)</th><th>Available</th><th></th></tr>';
+    let html='<table class="mm"><tr><th>Combo</th><th>Description</th><th>Price (₹)</th><th>Available</th><th>Delivery</th><th></th></tr>';
     Object.keys(cats).forEach(cat=>{
-      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      html += `<tr><td colspan="6" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
         html += `<tr><td style="font-weight:600">${it.name}</td>
           <td class="muted" style="font-size:12.5px">${it.description||'—'}</td>
           <td><input class="mm-price" type="number" value="${it.price}" onchange="updateComboPrice('${it.id}',this.value)"></td>
           <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleComboAvail('${it.id}')"><span class="sl"></span></label></td>
+          <td><label class="switch" title="On = available for delivery/takeaway, Off = dine-in only"><input type="checkbox" ${it.deliveryAvailable?'checked':''} onchange="toggleComboDelivery('${it.id}')"><span class="sl"></span></label></td>
           <td><button class="btn sm danger" onclick="deleteCombo('${it.id}','${it.name.replace(/'/g,"\\'")}')">✕</button></td></tr>`;
       });
     });
@@ -548,6 +571,7 @@ async function addCombo(){
 }
 async function updateComboPrice(id, val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
 async function toggleComboAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); loadCombo(); }catch(e){ toast(e.message); } }
+async function toggleComboDelivery(id){ try{ const r = await api.patch('/menu/'+id+'/delivery'); toast(r.deliveryAvailable?'Delivery enabled':'Delivery off — dine-in only'); }catch(e){ toast(e.message); } loadCombo(); }
 async function deleteCombo(id, name){
   if(!confirm('Remove "'+name+'" from the combo menu?')) return;
   try{ await api.del('/menu/'+id); toast(name+' removed'); loadCombo(); }catch(e){ toast(e.message); }

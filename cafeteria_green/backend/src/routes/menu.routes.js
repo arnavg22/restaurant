@@ -40,7 +40,8 @@ router.get('/', async (req, res, next) => {
                 hasVariants,
                 variants,
                 imageUrl: item.imageUrl,
-                isAvailable: item.isAvailable
+                isAvailable: item.isAvailable,
+                deliveryAvailable: item.deliveryAvailable
             };
         }));
     } catch (err) {
@@ -49,7 +50,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // ── GET /menu/all — Admin: list ALL items (including unavailable) ──
-router.get('/all', authenticate, authorize('admin', 'developer'), async (req, res, next) => {
+router.get('/all', authenticate, authorize('admin', 'developer', 'discount'), async (req, res, next) => {
     try {
         const items = await prisma.menuItem.findMany({
             orderBy: [
@@ -95,9 +96,9 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // ── POST /menu — Admin: create item ──
-router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
+router.post('/', authenticate, authorize('admin', 'discount'), async (req, res, next) => {
     try {
-        const { name, description, price, category, imageUrl, sortOrder, section, variants } = req.body;
+        const { name, description, price, category, imageUrl, sortOrder, section, variants, deliveryAvailable } = req.body;
 
         if (!name || !price || !category) {
             throw new AppError('Name, price, and category are required', 400, 'VALIDATION_ERROR');
@@ -108,13 +109,20 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
         }
 
         const cleanVariants = parseVariants(variants);
+        const resolvedSection = ['Bar', 'Combo'].includes(section) ? section : 'Food';
+        // Default delivery availability by section: Bar (alcohol) is dine-in only,
+        // Food and Combo are available for delivery. An explicit value overrides this.
+        const resolvedDelivery = typeof deliveryAvailable === 'boolean'
+            ? deliveryAvailable
+            : resolvedSection !== 'Bar';
         const item = await prisma.menuItem.create({
             data: {
                 name,
                 description: description || null,
                 price,
                 category,
-                section: ['Bar', 'Combo'].includes(section) ? section : 'Food',
+                section: resolvedSection,
+                deliveryAvailable: resolvedDelivery,
                 variants: cleanVariants.length ? cleanVariants : undefined,
                 imageUrl: imageUrl || null,
                 sortOrder: sortOrder || 0
@@ -128,9 +136,9 @@ router.post('/', authenticate, authorize('admin'), async (req, res, next) => {
 });
 
 // ── PUT /menu/:id — Admin: update item ──
-router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.put('/:id', authenticate, authorize('admin', 'discount'), async (req, res, next) => {
     try {
-        const { name, description, price, category, imageUrl, sortOrder, section, variants } = req.body;
+        const { name, description, price, category, imageUrl, sortOrder, section, variants, deliveryAvailable } = req.body;
 
         const existing = await prisma.menuItem.findUnique({
             where: { id: req.params.id }
@@ -150,6 +158,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
                 ...(imageUrl !== undefined && { imageUrl }),
                 ...(sortOrder !== undefined && { sortOrder }),
                 ...(section !== undefined && { section: ['Bar', 'Combo'].includes(section) ? section : 'Food' }),
+                ...(deliveryAvailable !== undefined && { deliveryAvailable: !!deliveryAvailable }),
                 ...(variants !== undefined && { variants: parseVariants(variants) })
             }
         });
@@ -161,7 +170,7 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res, next) => {
 });
 
 // ── PATCH /menu/:id/availability — Admin: toggle availability ──
-router.patch('/:id/availability', authenticate, authorize('admin'), async (req, res, next) => {
+router.patch('/:id/availability', authenticate, authorize('admin', 'discount'), async (req, res, next) => {
     try {
         const item = await prisma.menuItem.findUnique({
             where: { id: req.params.id }
@@ -186,8 +195,34 @@ router.patch('/:id/availability', authenticate, authorize('admin'), async (req, 
     }
 });
 
+// ── PATCH /menu/:id/delivery — Admin: toggle delivery availability ──
+router.patch('/:id/delivery', authenticate, authorize('admin', 'discount'), async (req, res, next) => {
+    try {
+        const item = await prisma.menuItem.findUnique({
+            where: { id: req.params.id }
+        });
+
+        if (!item) {
+            throw new AppError('Menu item not found', 404, 'NOT_FOUND');
+        }
+
+        const updated = await prisma.menuItem.update({
+            where: { id: req.params.id },
+            data: { deliveryAvailable: !item.deliveryAvailable }
+        });
+
+        res.json({
+            ...updated,
+            price: parseFloat(updated.price),
+            message: `Delivery ${updated.deliveryAvailable ? 'enabled' : 'disabled'} for this item`
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // ── DELETE /menu/:id — Admin: soft delete (set unavailable) ──
-router.delete('/:id', authenticate, authorize('admin'), async (req, res, next) => {
+router.delete('/:id', authenticate, authorize('admin', 'discount'), async (req, res, next) => {
     try {
         const item = await prisma.menuItem.update({
             where: { id: req.params.id },

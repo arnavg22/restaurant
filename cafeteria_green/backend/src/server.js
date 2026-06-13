@@ -22,6 +22,7 @@ import adminRoutes from './routes/admin.routes.js';
 import kitchenRoutes from './routes/kitchen.routes.js';
 import deliveryRoutes from './routes/delivery.routes.js';
 import devRoutes from './routes/dev.routes.js';
+import discountRoutes from './routes/discount.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 
 import { authenticateSocket } from './middleware/auth.js';
@@ -75,6 +76,7 @@ app.get('/admin', sendPage('admin.html'));
 app.get('/customer', sendPage('customer.html'));
 app.get('/delivery', sendPage('delivery.html'));
 app.get('/developer', sendPage('developer.html'));
+app.get('/discount', sendPage('discount.html'));
 app.get('/kitchen', sendPage('kitchen.html'));
 
 // Serve the connected Cafeteria Green app (customer/admin/delivery/developer) same-origin.
@@ -96,6 +98,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/kitchen', kitchenRoutes);
 app.use('/api/v1/delivery', deliveryRoutes);
 app.use('/api/v1/dev', devRoutes);
+app.use('/api/v1/discount', discountRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 
 

@@ -109,10 +109,16 @@ router.post('/commission/payments', async (req, res, next) => {
 
 router.get('/settings', async (req, res, next) => {
     try {
-        const upiIdSetting = await prisma.setting.findUnique({
-            where: { key: 'upi_id' },
+        const rows = await prisma.setting.findMany({
+            where: { key: { in: ['upi_id', 'gst_rate', 'vat_rate'] } }
         });
-        res.json({ upi_id: upiIdSetting?.value || '' });
+        const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+        res.json({
+            upi_id: map.upi_id || '',
+            // Tax rates as percentages; defaults GST 5%, VAT 18%
+            gst_rate: map.gst_rate ?? '5',
+            vat_rate: map.vat_rate ?? '18'
+        });
     } catch (err) {
         next(err);
     }
@@ -120,16 +126,38 @@ router.get('/settings', async (req, res, next) => {
 
 router.put('/settings', async (req, res, next) => {
     try {
-        const { upi_id } = req.body;
-        if (typeof upi_id !== 'string') {
-            throw new AppError('Invalid UPI ID format', 400, 'VALIDATION_ERROR');
+        const { upi_id, gst_rate, vat_rate } = req.body;
+
+        const upserts = [];
+
+        if (upi_id !== undefined) {
+            if (typeof upi_id !== 'string') {
+                throw new AppError('Invalid UPI ID format', 400, 'VALIDATION_ERROR');
+            }
+            upserts.push(['upi_id', upi_id]);
         }
 
-        await prisma.setting.upsert({
-            where: { key: 'upi_id' },
-            update: { value: upi_id },
-            create: { key: 'upi_id', value: upi_id },
-        });
+        // Validate and queue tax rates (stored as percentage strings)
+        for (const [key, val] of [['gst_rate', gst_rate], ['vat_rate', vat_rate]]) {
+            if (val === undefined) continue;
+            const num = parseFloat(val);
+            if (!Number.isFinite(num) || num < 0 || num > 100) {
+                throw new AppError('Tax rate must be a number between 0 and 100', 400, 'VALIDATION_ERROR');
+            }
+            upserts.push([key, String(num)]);
+        }
+
+        if (upserts.length === 0) {
+            throw new AppError('No settings provided to update', 400, 'VALIDATION_ERROR');
+        }
+
+        for (const [key, value] of upserts) {
+            await prisma.setting.upsert({
+                where: { key },
+                update: { value },
+                create: { key, value }
+            });
+        }
 
         res.json({ message: 'Settings updated successfully' });
     } catch (err) {

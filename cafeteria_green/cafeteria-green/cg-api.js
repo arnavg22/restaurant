@@ -103,13 +103,24 @@
     payment_expired: 'Payment expired',
   };
 
-  global.CG = { CGApi, rupee, toast, getAuth, clearAuth, STATUS_LABEL, API_BASE, saveSettings, loadSettings };
+  global.CG = { CGApi, rupee, toast, getAuth, clearAuth, STATUS_LABEL, API_BASE, saveSettings, loadSettings, onTaxTypeChange, saveTaxSetting };
+
+  // In-memory cache of the current tax rates (percentages) for the settings UI
+  let _taxRates = { gst: '5', vat: '18' };
 
   async function loadSettings() {
     const api = CGApi('admin');
     try {
       const settings = await api.get('/admin/settings');
-      document.querySelector('#upiId').value = settings.upi_id || '';
+      const upiEl = document.querySelector('#upiId');
+      if (upiEl) upiEl.value = settings.upi_id || '';
+
+      _taxRates = {
+        gst: settings.gst_rate ?? '5',
+        vat: settings.vat_rate ?? '18'
+      };
+      // Reflect the currently selected tax type's rate in the input
+      onTaxTypeChange();
     } catch (e) {
       toast(e.message);
     }
@@ -125,6 +136,33 @@
     try {
       await api.put('/admin/settings', { upi_id: upiId });
       toast('Settings saved successfully!');
+    } catch (e) {
+      toast(e.message);
+    }
+  }
+
+  // Show the rate of the selected tax type in the rate input
+  function onTaxTypeChange() {
+    const typeEl = document.querySelector('#taxType');
+    const rateEl = document.querySelector('#taxRate');
+    if (!typeEl || !rateEl) return;
+    rateEl.value = _taxRates[typeEl.value] ?? '';
+  }
+
+  async function saveTaxSetting() {
+    const api = CGApi('admin');
+    const type = document.querySelector('#taxType').value; // 'gst' | 'vat'
+    const raw = document.querySelector('#taxRate').value.trim();
+    const rate = parseFloat(raw);
+    if (!isFinite(rate) || rate < 0 || rate > 100) {
+      toast('Enter a valid tax rate between 0 and 100.');
+      return;
+    }
+    try {
+      const key = type === 'vat' ? 'vat_rate' : 'gst_rate';
+      await api.put('/admin/settings', { [key]: String(rate) });
+      _taxRates[type] = String(rate);
+      toast(`${type.toUpperCase()} rate saved as ${rate}%`);
     } catch (e) {
       toast(e.message);
     }

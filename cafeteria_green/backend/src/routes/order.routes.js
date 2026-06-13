@@ -52,6 +52,21 @@ function buildUpiUri(amount, note, vpa, payeeName) {
 }
 
 /**
+ * Read the admin-configured tax rates from settings.
+ * Stored as percentages (e.g. "5", "18"); returned as fractions (0.05, 0.18).
+ * Falls back to defaults (GST 5%, VAT 18%) when unset.
+ */
+async function getTaxRates() {
+    const rows = await prisma.setting.findMany({
+        where: { key: { in: ['gst_rate', 'vat_rate'] } }
+    });
+    const map = Object.fromEntries(rows.map(r => [r.key, parseFloat(r.value)]));
+    const gst = Number.isFinite(map.gst_rate) ? map.gst_rate : 5;
+    const vat = Number.isFinite(map.vat_rate) ? map.vat_rate : 18;
+    return { gstRate: gst / 100, vatRate: vat / 100 };
+}
+
+/**
  * Recompute the order total from a cart (server-side price snapshot + optional deal).
  * Shared by /preview, /payment-qr and POST / so the amount is always consistent.
  */
@@ -69,7 +84,7 @@ async function computeCartTotal(items, dealCode, userId) {
         throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
     }
     const itemMap = new Map(menuItems.map(m => [m.id, m]));
-    let subtotal = 0, devDiscount = 0, exemptSubtotal = 0, comboSubtotal = 0;
+    let subtotal = 0, devDiscount = 0, exemptSubtotal = 0, comboSubtotal = 0, alcoholSubtotal = 0;
     // Categories exempt from the 4% platform fee (100% goes to restaurant)
     const EXEMPT_CATEGORIES = ['cafeteria special thali'];
     for (const item of items) {
@@ -81,6 +96,10 @@ async function computeCartTotal(items, dealCode, userId) {
         if (line.isCombo) {
             comboSubtotal += lineTotal;
         }
+        // Alcohol items (Bar section) are taxed as VAT instead of GST
+        if (menuItem.section === 'Bar') {
+            alcoholSubtotal += lineTotal;
+        }
         if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
             exemptSubtotal += lineTotal;
         }
@@ -89,6 +108,7 @@ async function computeCartTotal(items, dealCode, userId) {
     devDiscount = Math.round(devDiscount * 100) / 100;
     exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
     comboSubtotal = Math.round(comboSubtotal * 100) / 100;
+    alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
     // Combos are not discountable — deals only apply to the rest of the cart.
     const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
@@ -99,8 +119,14 @@ async function computeCartTotal(items, dealCode, userId) {
         });
         if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId, discountableSubtotal);
     }
+    const { gstRate, vatRate } = await getTaxRates();
     // Both developer per-item discounts and deals come out of the platform's 4% share
-    return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100, exemptSubtotal);
+    return calculateOrderFinancials(
+        subtotal,
+        Math.round((devDiscount + dealDiscount) * 100) / 100,
+        exemptSubtotal,
+        { alcoholSubtotal, gstRate, vatRate }
+    );
 }
 
 // All routes require customer authentication
@@ -263,20 +289,24 @@ router.post('/preview', async (req, res, next) => {
 
         const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
         const comboSet = new Set(menuItems.filter(m => m.section === 'Combo').map(m => m.id));
+        const alcoholSet = new Set(menuItems.filter(m => m.section === 'Bar').map(m => m.id));
 
         let subtotal = 0;
         let comboSubtotal = 0;
+        let alcoholSubtotal = 0;
         const itemDetails = items.map(item => {
             const price = priceMap.get(item.menuItemId);
             if (!price) throw new AppError(`Item ${item.menuItemId} not available`, 400);
             const total = price * item.quantity;
             subtotal += total;
             if (comboSet.has(item.menuItemId)) comboSubtotal += total;
+            if (alcoholSet.has(item.menuItemId)) alcoholSubtotal += total;
             return { ...item, unitPrice: price, itemTotal: total };
         });
 
         subtotal = Math.round(subtotal * 100) / 100;
         comboSubtotal = Math.round(comboSubtotal * 100) / 100;
+        alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
         // Combos are not discountable.
         const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
@@ -304,7 +334,8 @@ router.post('/preview', async (req, res, next) => {
             }
         }
 
-        const financials = calculateOrderFinancials(subtotal, discount);
+        const { gstRate, vatRate } = await getTaxRates();
+        const financials = calculateOrderFinancials(subtotal, discount, 0, { alcoholSubtotal, gstRate, vatRate });
 
         res.json({
             items: itemDetails,
@@ -383,6 +414,16 @@ router.post('/', async (req, res, next) => {
             throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
         }
 
+        // ── Delivery restriction: dine-in-only items can't be delivered/taken away ──
+        if (orderType !== 'DINE_IN' && menuItems.some(m => m.deliveryAvailable === false)) {
+            const offenders = menuItems.filter(m => m.deliveryAvailable === false).map(m => m.name);
+            throw new AppError(
+                `These items are dine-in only and can't be ordered for delivery or takeaway: ${offenders.join(', ')}.`,
+                400,
+                'DINE_IN_ONLY'
+            );
+        }
+
         // ── Calculate subtotal with price snapshot (resolves Bar variants) ──
         const itemMap = new Map(menuItems.map(m => [m.id, m]));
         // Categories exempt from the 4% platform fee (100% restaurant)
@@ -392,6 +433,7 @@ router.post('/', async (req, res, next) => {
         let developerDiscountTotal = 0;
         let exemptSubtotal = 0;
         let comboSubtotal = 0;
+        let alcoholSubtotal = 0;
         const orderItems = items.map(item => {
             const menuItem = itemMap.get(item.menuItemId);
             const line = resolveLine(menuItem, item.variant);
@@ -400,6 +442,10 @@ router.post('/', async (req, res, next) => {
             subtotal += itemTotal;
             if (line.isCombo) {
                 comboSubtotal += itemTotal;
+            }
+            // Alcohol items (Bar section) are taxed as VAT instead of GST
+            if (menuItem.section === 'Bar') {
+                alcoholSubtotal += itemTotal;
             }
             if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
                 exemptSubtotal += itemTotal;
@@ -418,6 +464,7 @@ router.post('/', async (req, res, next) => {
         subtotal = Math.round(subtotal * 100) / 100;
         developerDiscountTotal = Math.round(developerDiscountTotal * 100) / 100;
         comboSubtotal = Math.round(comboSubtotal * 100) / 100;
+        alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
         // Combos are not discountable — deals only apply to the rest of the cart.
         const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
@@ -474,7 +521,10 @@ router.post('/', async (req, res, next) => {
         }
 
         const totalDiscount = Math.round((discountAmount + pointsDiscount) * 100) / 100;
-        const financials = calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal);
+        const { gstRate, vatRate } = await getTaxRates();
+        const financials = calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal, { alcoholSubtotal, gstRate, vatRate });
+        // gstAmount / vatAmount are for live display only; the Order table stores the combined taxAmount.
+        const { gstAmount, vatAmount, ...persistFinancials } = financials;
 
         // ── Calculate points earned (10% of customerPays before tax, i.e., afterDiscount amount) ──
         const afterDiscountAmount = Math.round((subtotal - totalDiscount) * 100) / 100;
@@ -499,7 +549,7 @@ router.post('/', async (req, res, next) => {
                     ...sanitizedContext,
                     specialRequest: (specialRequest && String(specialRequest).trim().slice(0, 500)) || null,
                     transactionId: paymentMethod === 'ONLINE' ? transactionId : null,
-                    ...financials,
+                    ...persistFinancials,
                     pointsEarned,
                     pointsRedeemed: pointsToRedeem,
                     appliedDealId: appliedDeal?.id || null,
