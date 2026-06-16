@@ -398,6 +398,8 @@ function addVariant(id, idx){ const it=MENU.find(m=>m.id===id); const v=it.varia
 function cartItems(){ return Object.values(CART); }
 function cartCount(){ return cartItems().reduce((s,c)=>s+c.qty,0); }
 function cartSubtotal(){ return cartItems().reduce((s,c)=>s+c.unitPrice*c.qty,0); }
+// Combos & thalis void all discounts for the whole cart.
+function cartHasCombo(){ return cartItems().some(c=>c.item && c.item.isCombo); }
 function updateCartBar(){
   const n=cartCount();
   const onMenu = $('#screen-menu').classList.contains('active');
@@ -487,10 +489,15 @@ function renderCart(){
       <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
   });
   const sub=cartSubtotal();
+  const hasCombo = cartHasCombo();
+  if(hasCombo) selectedDeal = null;
   if(selectedDeal && sub < selectedDeal.minOrderAmount) selectedDeal = null;
-  const disc = selectedDeal ? estimateDiscount(selectedDeal, sub) : 0;
-  // Deals
-  if(DEALS.length){
+  const disc = (selectedDeal && !hasCombo) ? estimateDiscount(selectedDeal, sub) : 0;
+  // Deals — combos/thalis disable all discounts for the whole cart
+  if(hasCombo){
+    html += `<div class="section-title">Discount schemes</div>
+      <div class="muted" style="font-size:12.5px;background:var(--panel-2);border-radius:10px;padding:10px 12px">Discounts don't apply when a combo or thali is in your cart.</div>`;
+  } else if(DEALS.length){
     const sorted = [...DEALS].sort((a,b)=>a.minOrderAmount-b.minOrderAmount);
     html += `<div class="section-title">Discount schemes <span class="muted" style="font-weight:400;font-size:12px">choose one</span></div><div class="deal-pick">`;
     html += `<div class="deal-chip ${!selectedDeal?'sel':''}" onclick="pickDeal(null)"><b>No discount</b></div>`;
@@ -554,22 +561,26 @@ function renderCart(){
   }
   const pointsDisc = usePoints ? Math.min(pointsValue, sub - disc) : 0;
   const totalDisc = disc + pointsDisc;
-  // Tax: VAT on alcohol (Bar) items, GST on the rest. Discount allocated proportionally.
+  // Tax: each item uses its own GST rate (effective rate from the menu API).
+  // Bar items are shown under VAT, everything else under GST. Discount is
+  // allocated proportionally across lines.
   const afterDisc = Math.max(0, sub - totalDisc);
-  const alcoholSub = cartItems().reduce((s,c)=> s + (c.item.section==='Bar' ? c.unitPrice*c.qty : 0), 0);
-  const alcoholFrac = sub>0 ? alcoholSub/sub : 0;
-  const alcoholAfter = afterDisc * alcoholFrac;
-  const nonAlcoholAfter = afterDisc - alcoholAfter;
-  const gstTax = nonAlcoholAfter * (TAX.gst/100);
-  const vatTax = alcoholAfter * (TAX.vat/100);
+  let gstTax = 0, vatTax = 0;
+  cartItems().forEach(c=>{
+    const lineTotal = c.unitPrice*c.qty;
+    const rate = (c.item && c.item.gstRate!=null) ? c.item.gstRate : (c.item.section==='Bar' ? TAX.vat : TAX.gst);
+    const taxable = sub>0 ? lineTotal - (lineTotal/sub)*totalDisc : 0;
+    const t = taxable * (rate/100);
+    if(c.item.section==='Bar') vatTax += t; else gstTax += t;
+  });
   const taxTotal = gstTax + vatTax;
   const toPay = afterDisc + taxTotal;
   // Bill
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
     ${pointsDisc>0?`<div class="bill-row" style="color:var(--citrus)"><span>Points discount (${Math.round(pointsDisc*10)} pts)</span><span>−${rupee(pointsDisc)}</span></div>`:''}
-    ${gstTax>0?`<div class="bill-row"><span>GST (${TAX.gst}%)</span><span>${rupee(Math.round(gstTax))}</span></div>`:''}
-    ${vatTax>0?`<div class="bill-row"><span>VAT (${TAX.vat}%)</span><span>${rupee(Math.round(vatTax))}</span></div>`:''}
+    ${gstTax>0?`<div class="bill-row"><span>GST</span><span>${rupee(Math.round(gstTax))}</span></div>`:''}
+    ${vatTax>0?`<div class="bill-row"><span>VAT</span><span>${rupee(Math.round(vatTax))}</span></div>`:''}
     <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round(toPay))}</span></div>
     <div class="bill-row" style="font-size:12px;color:var(--leaf-deep)"><span>🪙 You'll earn ${Math.floor((sub-totalDisc)/10)} points on this order</span></div></div>`;
   // Action button

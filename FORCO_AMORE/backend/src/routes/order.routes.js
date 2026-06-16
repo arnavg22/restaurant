@@ -6,7 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateOrderContext } from '../services/orderService.js';
-import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine } from '../services/orderService.js';
+import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine, computeCartTax } from '../services/orderService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -42,24 +42,30 @@ async function computeCartTotal(items, dealCode, userId) {
         throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
     }
     const itemMap = new Map(menuItems.map(m => [m.id, m]));
-    let subtotal = 0, devDiscount = 0;
+    let subtotal = 0, devDiscount = 0, hasCombo = false;
+    const taxLines = [];
     for (const item of items) {
         const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
         subtotal += line.unitPrice * item.quantity;
         devDiscount += line.devDiscount * item.quantity;
+        if (line.isCombo) hasCombo = true;
+        taxLines.push({ lineTotal: line.unitPrice * item.quantity, gstRate: line.gstRate });
     }
     subtotal = Math.round(subtotal * 100) / 100;
     devDiscount = Math.round(devDiscount * 100) / 100;
 
+    // Combos/thalis void all discounts for the whole cart.
     let dealDiscount = 0;
-    if (dealCode) {
+    if (dealCode && !hasCombo) {
         const deal = await prisma.deal.findFirst({
             where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
         });
         if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId);
     }
+    const totalDiscount = hasCombo ? 0 : Math.round((devDiscount + dealDiscount) * 100) / 100;
     // Both developer per-item discounts and deals come out of the platform's 15% share
-    return calculateOrderFinancials(subtotal, Math.round((devDiscount + dealDiscount) * 100) / 100);
+    const taxAmount = computeCartTax(taxLines, totalDiscount);
+    return calculateOrderFinancials(subtotal, totalDiscount, taxAmount);
 }
 
 // All routes require customer authentication
@@ -141,16 +147,19 @@ router.post('/preview', async (req, res, next) => {
         const menuItems = await prisma.menuItem.findMany({
             where: { id: { in: menuItemIds }, isAvailable: true }
         });
+        const itemMap = new Map(menuItems.map(m => [m.id, m]));
 
-        const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
-
-        let subtotal = 0;
+        let subtotal = 0, hasCombo = false;
+        const taxLines = [];
         const itemDetails = items.map(item => {
-            const price = priceMap.get(item.menuItemId);
-            if (!price) throw new AppError(`Item ${item.menuItemId} not available`, 400);
-            const total = price * item.quantity;
+            const menuItem = itemMap.get(item.menuItemId);
+            if (!menuItem) throw new AppError(`Item ${item.menuItemId} not available`, 400);
+            const line = resolveLine(menuItem, item.variant);
+            const total = Math.round(line.unitPrice * item.quantity * 100) / 100;
             subtotal += total;
-            return { ...item, unitPrice: price, itemTotal: total };
+            if (line.isCombo) hasCombo = true;
+            taxLines.push({ lineTotal: total, gstRate: line.gstRate });
+            return { ...item, unitPrice: line.unitPrice, itemTotal: total, gstRate: line.gstRate, isCombo: line.isCombo };
         });
 
         subtotal = Math.round(subtotal * 100) / 100;
@@ -158,7 +167,8 @@ router.post('/preview', async (req, res, next) => {
         let discount = 0;
         let dealInfo = null;
 
-        if (dealCode) {
+        // Combos/thalis void any discount across the whole cart.
+        if (dealCode && !hasCombo) {
             const deal = await prisma.deal.findFirst({
                 where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
             });
@@ -169,11 +179,13 @@ router.post('/preview', async (req, res, next) => {
             }
         }
 
-        const financials = calculateOrderFinancials(subtotal, discount);
+        const taxAmount = computeCartTax(taxLines, discount);
+        const financials = calculateOrderFinancials(subtotal, discount, taxAmount);
 
         res.json({
             items: itemDetails,
             deal: dealInfo,
+            comboInCart: hasCombo,
             financials,
             requiresContext: true,
         });
@@ -221,20 +233,26 @@ router.post('/', async (req, res, next) => {
         const itemMap = new Map(menuItems.map(m => [m.id, m]));
         let subtotal = 0;
         let developerDiscountTotal = 0;
+        let hasCombo = false;
+        const taxLines = [];
         const orderItems = items.map(item => {
             const line = resolveLine(itemMap.get(item.menuItemId), item.variant);
             developerDiscountTotal += line.devDiscount * item.quantity;
             const itemTotal = Math.round(line.unitPrice * item.quantity * 100) / 100;
             subtotal += itemTotal;
+            if (line.isCombo) hasCombo = true;
+            taxLines.push({ lineTotal: itemTotal, gstRate: line.gstRate });
             return { menuItemId: item.menuItemId, itemName: line.itemName, variant: line.variant, quantity: item.quantity, unitPrice: line.unitPrice, itemTotal };
         });
 
         subtotal = Math.round(subtotal * 100) / 100;
-        developerDiscountTotal = Math.round(developerDiscountTotal * 100) / 100;
-        
+        // Combos/thalis void all discounts (per-item developer discount AND deals).
+        developerDiscountTotal = hasCombo ? 0 : Math.round(developerDiscountTotal * 100) / 100;
+
         let appliedDeal = null;
         let dealDiscount = 0;
-        if (dealCode) {
+        // A combo/thali in the cart disables any offer/deal for the whole order.
+        if (dealCode && !hasCombo) {
             appliedDeal = await prisma.deal.findFirst({
                 where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
             });
@@ -245,9 +263,10 @@ router.post('/', async (req, res, next) => {
                 if (dealDiscount === 0) throw new AppError('Deal not applicable', 400, 'DEAL_NOT_APPLICABLE');
             }
         }
-        
+
         const discountAmount = Math.round((developerDiscountTotal + dealDiscount) * 100) / 100;
-        const financials = calculateOrderFinancials(subtotal, discountAmount);
+        const taxAmount = computeCartTax(taxLines, discountAmount);
+        const financials = calculateOrderFinancials(subtotal, discountAmount, taxAmount);
         
         const orderNumber = await generateOrderNumber();
         

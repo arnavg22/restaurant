@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { isBeerItem, BEER_GST_RATE } from './config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,8 @@ async function main() {
     for (const item of allItems) {
         sortOrder++;
         const section = item.section || 'Food';
+        // Beers are always 18% GST; other items inherit their section default (null).
+        const gstRate = item.gstRate != null ? item.gstRate : (isBeerItem(item) ? BEER_GST_RATE : null);
         await prisma.menuItem.create({
             data: {
                 name: item.name,
@@ -65,6 +68,7 @@ async function main() {
                 section,
                 // Bar (alcohol) items are dine-in only by default; Food/Combo are delivery-available.
                 deliveryAvailable: item.deliveryAvailable !== undefined ? item.deliveryAvailable : section !== 'Bar',
+                gstRate,
                 variants: item.variants || null,
                 isAvailable: item.isAvailable !== false,
                 sortOrder,

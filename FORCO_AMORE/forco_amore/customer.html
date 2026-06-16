@@ -339,6 +339,22 @@ function addVariant(id, idx){ const it=MENU.find(m=>m.id===id); const v=it.varia
 function cartItems(){ return Object.values(CART); }
 function cartCount(){ return cartItems().reduce((s,c)=>s+c.qty,0); }
 function cartSubtotal(){ return cartItems().reduce((s,c)=>s+c.unitPrice*c.qty,0); }
+// Combos & thalis void all discounts for the whole cart.
+function cartHasCombo(){ return cartItems().some(c=>c.item && c.item.isCombo); }
+// Per-item GST (mirrors backend computeCartTax): discount is allocated
+// proportionally across lines, then each line is taxed at its own GST rate.
+function cartTax(disc){
+  const sub = cartSubtotal();
+  if(sub<=0) return 0;
+  let tax=0;
+  cartItems().forEach(c=>{
+    const lineTotal = c.unitPrice*c.qty;
+    const rate = (c.item && c.item.gstRate!=null) ? c.item.gstRate : 5;
+    const taxable = lineTotal - (lineTotal/sub)*disc;
+    tax += taxable * rate/100;
+  });
+  return Math.round(tax);
+}
 function updateCartBar(){
   const n=cartCount();
   const onMenu = $('#screen-menu').classList.contains('active');
@@ -397,10 +413,15 @@ function renderCart(){
       <div class="stepper"><button onclick="chg('${c.item.id}',${vArg},-1);renderCart()">−</button><span>${c.qty}</span><button onclick="chg('${c.item.id}',${vArg},1);renderCart()">+</button></div></div>`;
   });
   const sub=cartSubtotal();
+  const hasCombo = cartHasCombo();
+  if(hasCombo) selectedDeal = null;
   if(selectedDeal && sub < selectedDeal.minOrderAmount) selectedDeal = null;
-  const disc = selectedDeal ? estimateDiscount(selectedDeal, sub) : 0;
-  // Deals
-  if(DEALS.length){
+  const disc = (selectedDeal && !hasCombo) ? estimateDiscount(selectedDeal, sub) : 0;
+  // Deals — combos/thalis disable all discounts for the whole cart
+  if(hasCombo){
+    html += `<div class="section-title">Discount schemes</div>
+      <div class="muted" style="font-size:12.5px;background:var(--panel-2);border-radius:10px;padding:10px 12px">Discounts don't apply when a combo or thali is in your cart.</div>`;
+  } else if(DEALS.length){
     const sorted = [...DEALS].sort((a,b)=>a.minOrderAmount-b.minOrderAmount);
     html += `<div class="section-title">Discount schemes <span class="muted" style="font-weight:400;font-size:12px">choose one</span></div><div class="deal-pick">`;
     html += `<div class="deal-chip ${!selectedDeal?'sel':''}" onclick="pickDeal(null)"><b>No discount</b></div>`;
@@ -450,10 +471,11 @@ function renderCart(){
       <div class="field"><textarea id="dNotes" placeholder="e.g. call on arrival">${savedNote}</textarea></div>`;
   }
   // Bill
+  const tax = cartTax(disc);
   html += `<div class="bill"><div class="bill-row"><span>Item total</span><span>${rupee(sub)}</span></div>
     ${disc>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Offer discount</span><span>−${rupee(disc)}</span></div>`:''}
-    <div class="bill-row"><span>Tax (5%)</span><span>${rupee(Math.round((sub-disc)*0.05))}</span></div>
-    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round((sub-disc)*1.05))}</span></div></div>`;
+    <div class="bill-row"><span>GST</span><span>${rupee(tax)}</span></div>
+    <div class="bill-row total"><span>To pay</span><span>${rupee(Math.round(sub-disc)+tax)}</span></div></div>`;
   // Action button
   if(paymentMethod==='ONLINE'){
     html += `<div style="margin-top:16px"><button class="btn block" onclick="goToPayment()">Continue to payment →</button></div>`;
@@ -636,7 +658,7 @@ async function renderTrack(){
   if(order.specialRequest){ html += `<div class="spec-box">⚠ ${order.specialRequest}</div>`; }
   html += `<div class="bill">${order.items.map(i=>`<div class="bill-row"><span>${i.quantity}× ${i.name}</span><span>${rupee(i.total)}</span></div>`).join('')}
     ${order.financials.discountAmount>0?`<div class="bill-row" style="color:var(--leaf-deep)"><span>Discount</span><span>−${rupee(order.financials.discountAmount)}</span></div>`:''}
-    ${order.financials.taxAmount>0?`<div class="bill-row"><span>Tax (5%)</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
+    ${order.financials.taxAmount>0?`<div class="bill-row"><span>GST</span><span>${rupee(order.financials.taxAmount)}</span></div>`:''}
     <div class="bill-row total"><span>Paid</span><span>${rupee(order.financials.customerPays)}</span></div></div>
     <div style="margin-top:14px"><button class="btn block ghost" onclick="reorder('${order.id}')">Reorder</button></div>`;
   $('#trackBody').innerHTML = html;

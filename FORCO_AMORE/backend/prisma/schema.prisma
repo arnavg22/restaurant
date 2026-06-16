@@ -56,6 +56,9 @@ model MenuItem {
   // Per-item discount funded by the developer's 15% share (₹). Capped at price * 0.15.
   // Visible price to customer = price - developerDiscount.
   developerDiscount Decimal @default(0) @map("developer_discount")
+  // GST rate for this item as a percentage (e.g. 5 = 5%, 18 = 18%). Admin-editable.
+  // Beers are always charged 18% regardless of this value (enforced in code).
+  gstRate      Decimal   @default(5) @map("gst_rate")
   category     String
   // Top-level menu section shown to customers: "Food" | "Bar"
   section      String    @default("Food")
@@ -227,16 +230,18 @@ model Order {
 model OrderItem {
   id           String    @id @default(uuid())
   orderId      String    @map("order_id")
-  menuItemId   String    @map("menu_item_id")
+  // Nullable so a menu item can be hard-deleted by the admin without destroying
+  // order history — itemName/unitPrice are snapshotted at order time.
+  menuItemId   String?   @map("menu_item_id")
   itemName     String    @map("item_name")
   variant      String?
   quantity     Int
-  unitPrice    Decimal   @map("unit_price") 
-  itemTotal    Decimal   @map("item_total") 
-  createdAt    DateTime  @default(now()) @map("created_at") 
+  unitPrice    Decimal   @map("unit_price")
+  itemTotal    Decimal   @map("item_total")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem     MenuItem  @relation(fields: [menuItemId], references: [id])
+  menuItem     MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
 
   @@map("order_items")
 }

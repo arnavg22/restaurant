@@ -499,22 +499,26 @@ async function loadMenuMgr(){
     <div class="field"><label>Category</label><input id="niCat" placeholder="e.g. Snacks"></div>
     <div class="field"><label>Section</label><select id="niSection"><option value="Food">Food</option><option value="Bar">Bar</option></select></div>
     <div class="field"><label>Price ₹</label><input id="niPrice" type="number" style="width:90px"></div>
+    <div class="field"><label>GST %</label><input id="niGst" type="number" step="0.01" placeholder="5" style="width:80px"></div>
     <button class="btn sm" onclick="addItem()">+ Add item</button>`;
   try{
     MENU_ITEMS = await api.get('/menu/all');
     const cats={}; MENU_ITEMS.forEach(i=>{ (cats[i.category]=cats[i.category]||[]).push(i); });
-    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>Sizes / options</th><th>Available</th></tr>';
+    let html='<table class="mm"><tr><th>Item</th><th>Section</th><th>Price (₹)</th><th>GST %</th><th>Sizes / options</th><th>Available</th><th></th></tr>';
     Object.keys(cats).forEach(cat=>{
-      html += `<tr><td colspan="5" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
+      html += `<tr><td colspan="7" style="background:var(--panel-2);font-weight:700;font-family:Bricolage Grotesque">${cat}</td></tr>`;
       cats[cat].forEach(it=>{
         const nVar = (it.variants||[]).length;
+        const gst = (it.gstRate!=null) ? it.gstRate : 5;
         html += `<tr><td>${it.name}</td>
           <td><select class="mm-price" style="width:84px" onchange="updateSection('${it.id}',this.value)">
             <option value="Food" ${it.section!=='Bar'?'selected':''}>Food</option>
             <option value="Bar" ${it.section==='Bar'?'selected':''}>Bar</option></select></td>
           <td><input class="mm-price" type="number" value="${it.price}" onchange="updatePrice('${it.id}',this.value)" ${nVar?'disabled title="priced by size"':''}></td>
+          <td><input class="mm-price" style="width:70px" type="number" step="0.01" value="${gst}" onchange="updateGst('${it.id}',this.value)" title="GST rate for this item"></td>
           <td><button class="btn sm soft" onclick="openVarEditor('${it.id}')">${nVar?nVar+' option'+(nVar>1?'s':''):'+ add'}</button></td>
-          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td></tr>`;
+          <td><label class="switch"><input type="checkbox" ${it.isAvailable?'checked':''} onchange="toggleAvail('${it.id}')"><span class="sl"></span></label></td>
+          <td><button class="btn sm danger" onclick="deleteItem('${it.id}')" title="Delete permanently">🗑 Delete</button></td></tr>`;
       });
     });
     html+='</table>'; $('#mmWrap').innerHTML=html;
@@ -522,11 +526,18 @@ async function loadMenuMgr(){
 }
 async function updatePrice(id,val){ try{ await api.put('/menu/'+id,{price:parseFloat(val)}); toast('Price updated'); }catch(e){ toast(e.message); } }
 async function updateSection(id,val){ try{ await api.put('/menu/'+id,{section:val}); toast('Section updated'); }catch(e){ toast(e.message); } }
+async function updateGst(id,val){ try{ await api.put('/menu/'+id,{gstRate:parseFloat(val)}); toast('GST updated'); }catch(e){ toast(e.message); } }
 async function toggleAvail(id){ try{ await api.patch('/menu/'+id+'/availability'); toast('Availability updated'); }catch(e){ toast(e.message); } }
+async function deleteItem(id){
+  const it = MENU_ITEMS.find(x=>x.id===id);
+  if(!confirm(`Permanently delete "${it?it.name:'this item'}"?\n\nThis removes it from the menu for good. Past orders keep their record.`)) return;
+  try{ await api.del('/menu/'+id); toast('Item deleted'); loadMenuMgr(); }catch(e){ toast(e.message); }
+}
 async function addItem(){
   const name=$('#niName').value.trim(), category=$('#niCat').value.trim(), section=$('#niSection').value, price=parseFloat($('#niPrice').value);
+  const gstRaw=$('#niGst').value.trim(); const gstRate = gstRaw==='' ? undefined : parseFloat(gstRaw);
   if(!name||!category||!price){ toast('Fill name, category, price'); return; }
-  try{ await api.post('/menu',{name,category,section,price}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
+  try{ await api.post('/menu',{name,category,section,price,...(gstRate!==undefined?{gstRate}:{})}); toast('Item added'); loadMenuMgr(); }catch(e){ toast(e.message); }
 }
 
 /* ---- variant (size/option) editor ---- */

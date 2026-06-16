@@ -7,6 +7,10 @@ import {
     PLATFORM_FEE_RATE,
     RESTAURANT_SHARE_RATE,
     TAX_RATE,
+    DEFAULT_GST_RATE,
+    BEER_GST_RATE,
+    isComboItem,
+    isBeerItem,
     STATUS_TRANSITIONS,
     STATUS_AUTHORIZERS,
     ORDER_PAYMENT_TIMEOUT,
@@ -41,7 +45,7 @@ const prisma = new PrismaClient();
  * │  = subtotal - discount  ✓                           │
  * └────────────────────────────────────────────────────┘
  */
-export function calculateOrderFinancials(subtotal, discountAmount = 0) {
+export function calculateOrderFinancials(subtotal, discountAmount = 0, taxAmount = null) {
     // Ensure discount never exceeds what platform can absorb
     const maxDiscount = subtotal * PLATFORM_FEE_RATE;
     const cappedDiscount = Math.min(discountAmount, maxDiscount);
@@ -49,10 +53,11 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0) {
     const platformFee = roundMoney(subtotal * PLATFORM_FEE_RATE);
     const restaurantShare = roundMoney(subtotal * RESTAURANT_SHARE_RATE);
 
-    // 5% tax on the discounted subtotal (what customer actually pays before tax)
     const preTotal = roundMoney(subtotal - cappedDiscount);
-    const taxAmount = roundMoney(preTotal * TAX_RATE);
-    const customerPays = roundMoney(preTotal + taxAmount);
+    // Per-item GST is computed by the caller (computeCartTax). When not provided
+    // we fall back to the flat TAX_RATE on the discounted subtotal.
+    const tax = roundMoney(taxAmount != null ? taxAmount : preTotal * TAX_RATE);
+    const customerPays = roundMoney(preTotal + tax);
 
     const platformEarnings = roundMoney(platformFee - cappedDiscount);
     const discountFromPlatform = roundMoney(cappedDiscount);
@@ -60,13 +65,44 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0) {
     return {
         subtotal: roundMoney(subtotal),
         discountAmount: discountFromPlatform,    // actual discount applied
-        taxAmount,                                // 5% tax
+        taxAmount: tax,                           // GST total (per-item rates)
         customerPays,                             // subtotal - discount + tax
         platformFee,
         discountFromPlatform,
         platformEarnings,
         restaurantShare
     };
+}
+
+/**
+ * Resolve the effective GST rate (%) for a menu item.
+ * Beers are always 18%; otherwise the item's own gstRate (default 5%).
+ */
+export function effectiveGstRate(menuItem) {
+    if (isBeerItem(menuItem)) return BEER_GST_RATE;
+    const r = parseFloat(menuItem?.gstRate);
+    return isNaN(r) ? DEFAULT_GST_RATE : r;
+}
+
+/**
+ * Compute total GST across cart lines using each item's own GST rate.
+ * The order-level discount (which comes out of the platform's share) is
+ * allocated proportionally to each line so GST is charged on the actual
+ * taxable value of that line.
+ *
+ * lines: [{ lineTotal, gstRate }]  — gstRate is a percentage (5, 18, …)
+ */
+export function computeCartTax(lines, discountAmount = 0) {
+    const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+    if (subtotal <= 0) return 0;
+    const cappedDiscount = Math.min(discountAmount, subtotal * PLATFORM_FEE_RATE);
+    let tax = 0;
+    for (const l of lines) {
+        const discountShare = (l.lineTotal / subtotal) * cappedDiscount;
+        const taxable = l.lineTotal - discountShare;
+        tax += taxable * ((parseFloat(l.gstRate) || 0) / 100);
+    }
+    return roundMoney(tax);
 }
 
 /**
@@ -139,6 +175,7 @@ export function parseVariants(v) {
  * Non-variant items use base price minus the per-item developer discount.
  */
 export function resolveLine(menuItem, variantName) {
+    const gstRate = effectiveGstRate(menuItem);
     const variants = parseVariants(menuItem.variants);
     if (variants.length) {
         if (!variantName) {
@@ -146,13 +183,17 @@ export function resolveLine(menuItem, variantName) {
         }
         const v = variants.find(x => x.name === variantName);
         if (!v) throw new AppError(`Invalid option for ${menuItem.name}`, 400, 'INVALID_VARIANT');
-        return { unitPrice: v.price, itemName: `${menuItem.name} · ${v.name}`, variant: v.name, devDiscount: 0 };
+        return { unitPrice: v.price, itemName: `${menuItem.name} · ${v.name}`, variant: v.name, devDiscount: 0, gstRate, isCombo: isComboItem(menuItem) };
     }
+    // Combos & thalis never carry a discount.
+    const devDiscount = isComboItem(menuItem) ? 0 : clampDevDiscount(menuItem.price, menuItem.developerDiscount);
     return {
         unitPrice: parseFloat(menuItem.price),
         itemName: menuItem.name,
         variant: null,
-        devDiscount: clampDevDiscount(menuItem.price, menuItem.developerDiscount)
+        devDiscount,
+        gstRate,
+        isCombo: isComboItem(menuItem)
     };
 }
 

@@ -13,6 +13,26 @@ export const DEFAULT_GST_RATE = parseFloat(process.env.GST_RATE || '0.05'); // 5
 export const DEFAULT_VAT_RATE = parseFloat(process.env.VAT_RATE || '0.18'); // 18%
 export const ORDER_PAYMENT_TIMEOUT = parseInt(process.env.ORDER_PAYMENT_TIMEOUT_MINUTES || '10');
 
+/**
+ * Combos & thalis: these items (and any cart containing one) never receive a
+ * discount — neither a per-item discount nor a cart-level offer/deal.
+ * Detected by section ("Combo") OR category/name (combo / thali), since the
+ * seeded data keeps combos & thalis in the "Food" section under those categories.
+ */
+export function isComboItem(item) {
+    const cat = (item?.category || '').toLowerCase();
+    const name = (item?.name || '').toLowerCase();
+    return item?.section === 'Combo' || /combo|thali/.test(cat) || /combo|thali/.test(name);
+}
+
+/** Beers always attract 18% GST. Matched by category or name. */
+export function isBeerItem(item) {
+    const cat = (item?.category || '').toLowerCase();
+    const name = (item?.name || '').toLowerCase();
+    return cat.includes('beer') || name.includes('beer');
+}
+export const BEER_GST_RATE = 18; // %
+
 // Valid status transitions
 export const STATUS_TRANSITIONS = {
     // Customer places order with a UPI transaction ID → awaits MANUAL payment verification by admin

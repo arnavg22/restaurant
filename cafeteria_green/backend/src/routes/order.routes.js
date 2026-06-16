@@ -26,7 +26,7 @@ import { PrismaClient } from '@prisma/client';
 import QRCode from 'qrcode';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateDeliveryInfo, validateOrderContext } from '../services/orderService.js';
-import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine } from '../services/orderService.js';
+import { calculateDealDiscount, calculateOrderFinancials, clampDevDiscount, resolveLine, computeCartTax, effectiveGstRate } from '../services/orderService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -84,7 +84,10 @@ async function computeCartTotal(items, dealCode, userId) {
         throw new AppError(`Items not available: ${missing.join(', ')}`, 400, 'ITEMS_UNAVAILABLE');
     }
     const itemMap = new Map(menuItems.map(m => [m.id, m]));
-    let subtotal = 0, devDiscount = 0, exemptSubtotal = 0, comboSubtotal = 0, alcoholSubtotal = 0;
+    const { gstRate, vatRate } = await getTaxRates();
+    const taxDefaults = { gstDefault: gstRate * 100, vatDefault: vatRate * 100 };
+    let subtotal = 0, devDiscount = 0, exemptSubtotal = 0, comboSubtotal = 0, hasCombo = false;
+    const taxLines = [];
     // Categories exempt from the 4% platform fee (100% goes to restaurant)
     const EXEMPT_CATEGORIES = ['cafeteria special thali'];
     for (const item of items) {
@@ -95,11 +98,9 @@ async function computeCartTotal(items, dealCode, userId) {
         devDiscount += line.devDiscount * item.quantity;
         if (line.isCombo) {
             comboSubtotal += lineTotal;
+            hasCombo = true;
         }
-        // Alcohol items (Bar section) are taxed as VAT instead of GST
-        if (menuItem.section === 'Bar') {
-            alcoholSubtotal += lineTotal;
-        }
+        taxLines.push({ lineTotal, gstRate: effectiveGstRate(menuItem, taxDefaults), isAlcohol: menuItem.section === 'Bar' });
         if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
             exemptSubtotal += lineTotal;
         }
@@ -108,25 +109,20 @@ async function computeCartTotal(items, dealCode, userId) {
     devDiscount = Math.round(devDiscount * 100) / 100;
     exemptSubtotal = Math.round(exemptSubtotal * 100) / 100;
     comboSubtotal = Math.round(comboSubtotal * 100) / 100;
-    alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
-    // Combos are not discountable — deals only apply to the rest of the cart.
+    // A combo/thali anywhere in the cart voids ALL discounts for the whole order.
+    if (hasCombo) devDiscount = 0;
     const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
     let dealDiscount = 0;
-    if (dealCode) {
+    if (dealCode && !hasCombo) {
         const deal = await prisma.deal.findFirst({
             where: { id: dealCode, isActive: true, startsAt: { lte: new Date() }, expiresAt: { gte: new Date() } }
         });
         if (deal) dealDiscount = calculateDealDiscount(deal, subtotal, userId, discountableSubtotal);
     }
-    const { gstRate, vatRate } = await getTaxRates();
-    // Both developer per-item discounts and deals come out of the platform's 4% share
-    return calculateOrderFinancials(
-        subtotal,
-        Math.round((devDiscount + dealDiscount) * 100) / 100,
-        exemptSubtotal,
-        { alcoholSubtotal, gstRate, vatRate }
-    );
+    const totalDiscount = hasCombo ? 0 : Math.round((devDiscount + dealDiscount) * 100) / 100;
+    const taxInfo = computeCartTax(taxLines, totalDiscount);
+    return calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal, taxInfo);
 }
 
 // All routes require customer authentication
@@ -287,34 +283,35 @@ router.post('/preview', async (req, res, next) => {
             where: { id: { in: menuItemIds }, isAvailable: true }
         });
 
-        const priceMap = new Map(menuItems.map(m => [m.id, parseFloat(m.price)]));
-        const comboSet = new Set(menuItems.filter(m => m.section === 'Combo').map(m => m.id));
-        const alcoholSet = new Set(menuItems.filter(m => m.section === 'Bar').map(m => m.id));
+        const itemMap = new Map(menuItems.map(m => [m.id, m]));
+        const { gstRate, vatRate } = await getTaxRates();
+        const taxDefaults = { gstDefault: gstRate * 100, vatDefault: vatRate * 100 };
 
         let subtotal = 0;
         let comboSubtotal = 0;
-        let alcoholSubtotal = 0;
+        let hasCombo = false;
+        const taxLines = [];
         const itemDetails = items.map(item => {
-            const price = priceMap.get(item.menuItemId);
-            if (!price) throw new AppError(`Item ${item.menuItemId} not available`, 400);
-            const total = price * item.quantity;
+            const menuItem = itemMap.get(item.menuItemId);
+            if (!menuItem) throw new AppError(`Item ${item.menuItemId} not available`, 400);
+            const line = resolveLine(menuItem, item.variant);
+            const total = Math.round(line.unitPrice * item.quantity * 100) / 100;
             subtotal += total;
-            if (comboSet.has(item.menuItemId)) comboSubtotal += total;
-            if (alcoholSet.has(item.menuItemId)) alcoholSubtotal += total;
-            return { ...item, unitPrice: price, itemTotal: total };
+            if (line.isCombo) { comboSubtotal += total; hasCombo = true; }
+            taxLines.push({ lineTotal: total, gstRate: effectiveGstRate(menuItem, taxDefaults), isAlcohol: menuItem.section === 'Bar' });
+            return { ...item, unitPrice: line.unitPrice, itemTotal: total, isCombo: line.isCombo };
         });
 
         subtotal = Math.round(subtotal * 100) / 100;
         comboSubtotal = Math.round(comboSubtotal * 100) / 100;
-        alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
-        // Combos are not discountable.
+        // Combos/thalis void all discounts for the whole cart.
         const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
         // Apply deal if provided
         let discount = 0;
         let dealInfo = null;
 
-        if (dealCode) {
+        if (dealCode && !hasCombo) {
             const deal = await prisma.deal.findFirst({
                 where: {
                     id: dealCode,
@@ -334,12 +331,13 @@ router.post('/preview', async (req, res, next) => {
             }
         }
 
-        const { gstRate, vatRate } = await getTaxRates();
-        const financials = calculateOrderFinancials(subtotal, discount, 0, { alcoholSubtotal, gstRate, vatRate });
+        const taxInfo = computeCartTax(taxLines, discount);
+        const financials = calculateOrderFinancials(subtotal, discount, 0, taxInfo);
 
         res.json({
             items: itemDetails,
             deal: dealInfo,
+            comboInCart: hasCombo,
             financials,
             // Tell frontend: delivery info is required before you can place this order
             requiresDeliveryInfo: true,
@@ -426,6 +424,8 @@ router.post('/', async (req, res, next) => {
 
         // ── Calculate subtotal with price snapshot (resolves Bar variants) ──
         const itemMap = new Map(menuItems.map(m => [m.id, m]));
+        const { gstRate, vatRate } = await getTaxRates();
+        const taxDefaults = { gstDefault: gstRate * 100, vatDefault: vatRate * 100 };
         // Categories exempt from the 4% platform fee (100% restaurant)
         const EXEMPT_CATEGORIES = ['cafeteria special thali'];
 
@@ -433,7 +433,8 @@ router.post('/', async (req, res, next) => {
         let developerDiscountTotal = 0;
         let exemptSubtotal = 0;
         let comboSubtotal = 0;
-        let alcoholSubtotal = 0;
+        let hasCombo = false;
+        const taxLines = [];
         const orderItems = items.map(item => {
             const menuItem = itemMap.get(item.menuItemId);
             const line = resolveLine(menuItem, item.variant);
@@ -442,11 +443,9 @@ router.post('/', async (req, res, next) => {
             subtotal += itemTotal;
             if (line.isCombo) {
                 comboSubtotal += itemTotal;
+                hasCombo = true;
             }
-            // Alcohol items (Bar section) are taxed as VAT instead of GST
-            if (menuItem.section === 'Bar') {
-                alcoholSubtotal += itemTotal;
-            }
+            taxLines.push({ lineTotal: itemTotal, gstRate: effectiveGstRate(menuItem, taxDefaults), isAlcohol: menuItem.section === 'Bar' });
             if (EXEMPT_CATEGORIES.includes(menuItem.category.toLowerCase())) {
                 exemptSubtotal += itemTotal;
             }
@@ -464,15 +463,15 @@ router.post('/', async (req, res, next) => {
         subtotal = Math.round(subtotal * 100) / 100;
         developerDiscountTotal = Math.round(developerDiscountTotal * 100) / 100;
         comboSubtotal = Math.round(comboSubtotal * 100) / 100;
-        alcoholSubtotal = Math.round(alcoholSubtotal * 100) / 100;
-        // Combos are not discountable — deals only apply to the rest of the cart.
+        // A combo/thali anywhere in the cart voids ALL discounts for the whole order.
+        if (hasCombo) developerDiscountTotal = 0;
         const discountableSubtotal = Math.round((subtotal - comboSubtotal) * 100) / 100;
 
-        // ── Apply deal if provided ──
+        // ── Apply deal if provided (disabled entirely when a combo/thali is present) ──
         let appliedDeal = null;
         let dealDiscount = 0;
 
-        if (dealCode) {
+        if (dealCode && !hasCombo) {
             appliedDeal = await prisma.deal.findFirst({
                 where: {
                     id: dealCode,
@@ -521,8 +520,8 @@ router.post('/', async (req, res, next) => {
         }
 
         const totalDiscount = Math.round((discountAmount + pointsDiscount) * 100) / 100;
-        const { gstRate, vatRate } = await getTaxRates();
-        const financials = calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal, { alcoholSubtotal, gstRate, vatRate });
+        const taxInfo = computeCartTax(taxLines, totalDiscount);
+        const financials = calculateOrderFinancials(subtotal, totalDiscount, exemptSubtotal, taxInfo);
         // gstAmount / vatAmount are for live display only; the Order table stores the combined taxAmount.
         const { gstAmount, vatAmount, ...persistFinancials } = financials;
 

@@ -9,6 +9,9 @@ import {
     TAX_RATE,
     DEFAULT_GST_RATE,
     DEFAULT_VAT_RATE,
+    BEER_GST_RATE,
+    isComboItem,
+    isBeerItem,
     STATUS_TRANSITIONS,
     STATUS_AUTHORIZERS,
     ORDER_PAYMENT_TIMEOUT,
@@ -69,12 +72,14 @@ const prisma = new PrismaClient();
  * │  customer_pays  = afterDiscount + tax              │
  * └────────────────────────────────────────────────────┘
  */
-export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0, taxOpts = {}) {
+export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSubtotal = 0, taxInfo = {}) {
+    // taxInfo is computed per-item by computeCartTax() so each item uses its own
+    // GST rate (with VAT as the section default for Bar items).
     const {
-        alcoholSubtotal = 0,
-        gstRate = DEFAULT_GST_RATE,
-        vatRate = DEFAULT_VAT_RATE
-    } = taxOpts;
+        taxAmount = 0,
+        gstAmount = 0,
+        vatAmount = 0
+    } = taxInfo;
 
     const cappedDiscount = roundMoney(Math.max(0, Math.min(discountAmount, subtotal)));
 
@@ -91,32 +96,59 @@ export function calculateOrderFinancials(subtotal, discountAmount = 0, exemptSub
     // Restaurant gets the rest
     const restaurantShare = roundMoney(afterDiscount - platformFee);
 
-    // ── Split tax: VAT on alcohol portion, GST on the rest ──
-    // Discount is allocated proportionally so each portion is taxed on its
-    // own after-discount value.
-    const safeAlcohol = roundMoney(Math.max(0, Math.min(alcoholSubtotal, subtotal)));
-    const alcoholFraction = subtotal > 0 ? safeAlcohol / subtotal : 0;
-    const alcoholAfterDiscount = roundMoney(afterDiscount * alcoholFraction);
-    const nonAlcoholAfterDiscount = roundMoney(afterDiscount - alcoholAfterDiscount);
-
-    const vatAmount = roundMoney(alcoholAfterDiscount * vatRate);
-    const gstAmount = roundMoney(nonAlcoholAfterDiscount * gstRate);
-    const taxAmount = roundMoney(vatAmount + gstAmount);
-
-    const customerPays = roundMoney(afterDiscount + taxAmount);
+    const tax = roundMoney(taxAmount);
+    const customerPays = roundMoney(afterDiscount + tax);
 
     return {
         subtotal: roundMoney(subtotal),
         discountAmount: cappedDiscount,
-        taxAmount,
-        gstAmount,
-        vatAmount,
+        taxAmount: tax,
+        gstAmount: roundMoney(gstAmount),
+        vatAmount: roundMoney(vatAmount),
         customerPays,
         platformFee,
         discountFromPlatform: 0,
         platformEarnings,
         restaurantShare
     };
+}
+
+/**
+ * Resolve the effective GST rate (%) for a menu item.
+ *   - Beers are always 18%.
+ *   - An explicit per-item gstRate override wins.
+ *   - Otherwise the section default applies: VAT for Bar, GST for everything else.
+ * `defaults` carries the admin-configured rates as PERCENTAGES (e.g. 5, 18).
+ */
+export function effectiveGstRate(menuItem, defaults = {}) {
+    const gstDefault = defaults.gstDefault != null ? defaults.gstDefault : DEFAULT_GST_RATE * 100;
+    const vatDefault = defaults.vatDefault != null ? defaults.vatDefault : DEFAULT_VAT_RATE * 100;
+    if (isBeerItem(menuItem)) return BEER_GST_RATE;
+    const override = parseFloat(menuItem?.gstRate);
+    if (!isNaN(override)) return override;
+    return menuItem?.section === 'Bar' ? vatDefault : gstDefault;
+}
+
+/**
+ * Compute tax across cart lines using each item's effective rate.
+ * The order-level discount is allocated proportionally to each line.
+ * Bar items are reported under vatAmount, everything else under gstAmount.
+ *
+ * lines: [{ lineTotal, gstRate (percent), isAlcohol }]
+ */
+export function computeCartTax(lines, discountAmount = 0) {
+    const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+    if (subtotal <= 0) return { taxAmount: 0, gstAmount: 0, vatAmount: 0 };
+    const cappedDiscount = Math.max(0, Math.min(discountAmount, subtotal));
+    let gst = 0, vat = 0;
+    for (const l of lines) {
+        const taxable = l.lineTotal - (l.lineTotal / subtotal) * cappedDiscount;
+        const t = taxable * ((parseFloat(l.gstRate) || 0) / 100);
+        if (l.isAlcohol) vat += t; else gst += t;
+    }
+    gst = roundMoney(gst);
+    vat = roundMoney(vat);
+    return { taxAmount: roundMoney(gst + vat), gstAmount: gst, vatAmount: vat };
 }
 
 /**
@@ -198,8 +230,8 @@ export function parseVariants(v) {
  * Non-variant items use base price minus the per-item developer discount.
  */
 export function resolveLine(menuItem, variantName) {
-    // Combos are never discounted (no developer per-item discount).
-    const isCombo = menuItem.section === 'Combo';
+    // Combos & thalis are never discounted (no developer per-item discount).
+    const isCombo = isComboItem(menuItem);
     const variants = parseVariants(menuItem.variants);
     if (variants.length) {
         if (!variantName) {
